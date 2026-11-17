@@ -60,6 +60,8 @@ trata como sin sesión (`401`).
 | `POST /api/bookings` | `{ courtId, date, startTime, durationMin }` | `201` reserva (`status: confirmada`, `payment.status: pendiente`, `price` calculado por el servidor); `400`; `401`; `404` cancha; `409` choque; `422` fuera de horario, pasado o cancha inactiva | CA-04, CA-05, CA-06 |
 | `GET /api/bookings/mine` | — | `200 [reserva]` solo del usuario, ordenadas por fecha y hora descendente, todos los estados; `401` | CA-04 |
 | `POST /api/bookings/:id/cancel` | — | `200` reserva con `status: cancelada` y bloques liberados; `401`; `404` no existe o no es suya; `409` no está `confirmada`; `422` ya empezó | CA-07 |
+| `POST /api/bookings/series` *(CR-01)* | `{ courtId, date, startTime, durationMin, weeks }` con `weeks` entero 2…8; `date` es la 1.ª ocurrencia | `201 { seriesId, bookings: [reserva] }` (`weeks` reservas con `seriesId` compartido, fechas `date + 7·k`, precio y pago por ocurrencia); `400` (incluye `weeks` fuera de rango); `401`; `404` cancha; `409` "Ese horario ya fue tomado el <YYYY-MM-DD>. Elige otro." con la fecha que choca; `422` horario, pasado o cancha inactiva, nombrando la fecha. Todo-o-nada (RN-12): ante un error no se crea ninguna | CA-15, CA-16 |
+| `POST /api/bookings/series/:seriesId/cancel-future` *(CR-01)* | — | `200 { cancelled: n }`: cancela solo las ocurrencias `confirmadas` que no han empezado de una serie propia; `n` puede ser 0; `401`; `404` serie inexistente o ajena | CA-17 |
 
 ## Admin (rol admin: `401` sin sesión, `403` sin rol)
 
@@ -67,6 +69,8 @@ trata como sin sesión (`401`).
 |---|---|---|---|
 | `GET /api/admin/bookings?date=` | — | `200 [reserva]` del día (todos los estados) con `played`, y cliente (`user: { name, phone }`) o `guest`; `400` fecha inválida | CA-10 |
 | `POST /api/admin/bookings` | `{ courtId, date, startTime, durationMin, guest: { name, phone } }` | `201` reserva con `createdBy: admin` y `guest`; `400` (falta nombre o teléfono); `404` cancha; `409` choque; `422` horario, pasado o cancha inactiva | CA-11 |
+| `POST /api/admin/bookings/series` *(CR-01)* | `{ courtId, date, startTime, durationMin, weeks, guest: { name, phone } }` | `201 { seriesId, bookings }` con `createdBy: admin` y `guest`; `400` (falta nombre o teléfono, `weeks` fuera de 2…8); `404` cancha; `409` con la fecha que choca; `422` con la fecha; todo-o-nada (RN-12) | CA-18 |
+| `POST /api/admin/bookings/series/:seriesId/cancel-future` *(CR-01)* | — | `200 { cancelled: n }` sobre cualquier serie, solo ocurrencias `confirmadas` que no han empezado; `404` serie inexistente | CA-17 |
 | `POST /api/admin/bookings/:id/payment` | `{ amount, method: "efectivo"\|"transferencia"\|"tarjeta" }` con `amount > 0` | `200` reserva con `payment: { status: pagado, amount, method, paidAt, paidBy }` (`paidBy` = id del admin de la sesión); `400`; `404`; `409` ya pagada, `cancelada` o `no_show`; `422` aún no terminó (el `409` se evalúa antes que el `422`) | CA-12, CA-13 |
 | `POST /api/admin/bookings/:id/no-show` | — | `200` reserva con `status: no_show` (conserva los bloques); `404`; `409` no está `confirmada`; `422` aún no terminó (el `409` se evalúa antes que el `422`) | CA-13 |
 | `POST /api/admin/bookings/:id/cancel` | — | `200` reserva `cancelada` y bloques liberados; `404`; `409` no está `confirmada`; sin restricción de hora (RN-06) | CA-10 |
@@ -83,6 +87,7 @@ cambios no alteran reservas existentes (RN-10).
 
 ## Notas
 
+- **CR-01:** cada reserva de una serie incluye `seriesId` (UUID); las reservas sueltas no lo tienen. El pago, el no-show y la cancelación individual (`/:id/...`) operan sobre una ocurrencia y no afectan a las demás (RN-13). Para series, el `409` y el `422` llevan el mensaje con la fecha de la primera ocurrencia que falla, en orden de fecha.
 - `startTime` cumple `/^([01]\d|2[0-3]):(00|30)$/`; `durationMin` ∈ {60, 90, 120}.
 - Teléfono `/^\+?[0-9 ]{7,15}$/`; contraseña ≥ 8; nombre 2–60; email válido y único.
 - El precio lo calcula el servidor desde la cancha; el cliente nunca lo envía. El pago admite

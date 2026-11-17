@@ -15,11 +15,11 @@ Sembrado: Media A (`[futbol-media-a]`), Media B (`[futbol-media-b]`), Completa (
 Pádel 1, Básquet 1; precios y horario por defecto según `business-rules.md`.
 
 ### `bookings`
-`{ _id, courtId, userId? | guest: { name, phone }, createdBy: "client"|"admin", date, startSlot, durationMin: 60|90|120, spaceIds: string[], price, status: "confirmada"|"cancelada"|"no_show", payment: { status: "pendiente"|"pagado", amount?, method?: "efectivo"|"transferencia"|"tarjeta", paidAt?, paidBy? }, createdAt }`
+`{ _id, courtId, userId? | guest: { name, phone }, createdBy: "client"|"admin", date, startSlot, durationMin: 60|90|120, spaceIds: string[], price, status: "confirmada"|"cancelada"|"no_show", payment: { status: "pendiente"|"pagado", amount?, method?: "efectivo"|"transferencia"|"tarjeta", paidAt?, paidBy? }, createdAt, seriesId? }`
 
 - `spaceIds` y `price` se copian de la cancha al crear (RN-10).
 - "Jugada" no se guarda: se deriva con `hasEnded(date, startSlot, durationMin, now)`.
-- No existen campos de series en este ciclo (decisión de proceso del diseño).
+- **CR-01:** `seriesId?` (string UUID) agrupa las ocurrencias de una serie semanal; las reservas sueltas no lo tienen. Cada ocurrencia sigue siendo una reserva completa, con sus propios `slot_locks`, precio y pago. Antes del ciclo 3 no existía ningún campo de series (decisión de proceso del diseño); el campo es opcional, así que las reservas existentes no requieren migración.
 
 ### `slot_locks`
 `{ spaceId, date, slot, bookingId }` con **índice único `(spaceId, date, slot)`** (RN-01, RN-02).
@@ -31,6 +31,8 @@ Pádel 1, Básquet 1; precios y horario por defecto según `business-rules.md`.
 
 - **Crear reserva:** en una transacción inserta la reserva y un `slot_lock` por cada bloque × espacio.
   Un `E11000` aborta la transacción y se traduce en `409`.
+- **Crear serie (CR-01):** una sola transacción inserta todas las ocurrencias (reserva + `slot_locks`) con el mismo `seriesId`; si cualquier insert da `E11000` o una ocurrencia incumple una regla, aborta y no queda ninguna (RN-12). El error nombra la fecha de la ocurrencia que falla.
+- **Cancelar las próximas (CR-01):** en una transacción marca `cancelada` las ocurrencias `confirmadas` de la serie que no han empezado y borra sus `slot_locks`.
 - **Cancelar:** en una transacción marca `cancelada` y borra sus `slot_locks`.
 - **No se presentó:** marca `no_show`; conserva los locks (el turno ya pasó).
 
@@ -41,3 +43,4 @@ Pádel 1, Básquet 1; precios y horario por defecto según `business-rules.md`.
 | `slot_locks` | único `(spaceId, date, slot)` | RN-01, RN-02 |
 | `users` | único `email` | CA-08 |
 | `bookings` | `(date)`, `(userId, date)` | Reservas del día y Mis reservas |
+| `bookings` | `(seriesId)` *(CR-01)* | Cancelar las próximas de una serie (RF-16) |
