@@ -2,9 +2,12 @@
 
 ## [Sin publicar]
 
-## [Ciclo 3] Cambio solicitado
+## [Ciclo 3]
 
-- **CR-01 Reservas recurrentes (solo specs):** RF-15/RF-16, RN-12/RN-13 (todo-o-nada y ocurrencias independientes), CA-15…CA-18, endpoints de series en `api.md`, `bookings.seriesId?` e índice en `data-model.md`, ciclo 3 en `implementation-plan.md` y ADR-005 (#11). La implementación (#12) y las pruebas (#13) siguen pendientes.
+- **CR-01 Reservas recurrentes (specs):** RF-15/RF-16, RN-12/RN-13 (todo-o-nada y ocurrencias independientes), CA-15…CA-18, endpoints de series en `api.md`, `bookings.seriesId?` e índice en `data-model.md`, ciclo 3 en `implementation-plan.md` y ADR-005 (#11).
+- **CR-01 Reservas recurrentes (código):** series semanales de 2 a 8 semanas, todo-o-nada con `409`/`422` que nombran la fecha, `seriesId`, «cancelar las próximas», rutas de cliente y admin, y UI «Repetir cada semana» con Mis reservas agrupado por serie (#12).
+- **CR-01 Pruebas y cierre:** `tests/e2e/series.e2e.ts` (CA-15…CA-18), fixture `seedPastBooking` con `seriesId`, sección «Evidencia CR-01» en `docs/testing.md` y README final. 90 `bun test` y 20 e2e en verde (#13).
+- Pendiente: publicar las ramas, abrir los PR y verificar el CI en `main`.
 
 ## [Ciclo 2]
 

@@ -37,7 +37,7 @@ Las pruebas de integración crean una BD aleatoria (`canchas_test_*`) y la elimi
 
 ## Tabla RN/CA → prueba
 
-Resultado de la corrida local (Ciclo 2, tarea 9): `bunx playwright test` → **16 e2e en verde** (2 corridas seguidas sobre BD fresca) y `bun test` → 73 pass, 0 fail.
+Resultado de la corrida local (Ciclo 3, tarea 12, rama `test/13-series-cierre`): `bunx playwright test` → **20 e2e en verde** (2 corridas seguidas sobre BD fresca: 16 de CA-01…CA-14 + 4 de CA-15…CA-18) y `bun test` → **90 pass, 0 fail** (12 archivos). En el Ciclo 2 (tarea 9) eran 16 e2e y 73 `bun test`.
 
 | RN / CA | Prueba | Tipo | Estado |
 |---|---|---|---|
@@ -61,5 +61,34 @@ Resultado de la corrida local (Ciclo 2, tarea 9): `bunx playwright test` → **1
 | CA-12 | `backoffice.e2e.ts` «CA-12 el admin cobra una reserva jugada…» (422 antes de jugar, monto prellenado y ajustado, transferencia, sale de «por cobrar», aparece en «cobrados», 2.º pago 409); `admin.test.ts` | e2e + integración | ✔ pasa |
 | CA-13 | `backoffice.e2e.ts` «CA-13 no se presentó…» (422 antes de terminar, sale de «por cobrar», pago posterior 409); `admin.test.ts` | e2e + integración | ✔ pasa |
 | CA-14 | `backoffice.e2e.ts` «CA-14 configurar canchas…» (precio nuevo, horario recortado → «cerrado», mantenimiento, 409 al borrar con reservas, alta de «Pádel 2»); `admin.test.ts` | e2e + integración | ✔ pasa |
+| CA-15 *(CR-01)* | `series.e2e.ts` «CA-15 el cliente repite cada semana…» (casilla «Repetir cada semana», 4 semanas, total $80, aviso «Serie confirmada: 4 reservas.», un grupo en Mis reservas, mismo `seriesId`, fechas +7·k, pago pendiente, `weeks` 1 y 9 → 400); `series.test.ts` «crear serie (CA-15)» | e2e + integración | ✔ pasa |
+| CA-16 *(CR-01)* | `series.e2e.ts` «CA-16 serie todo-o-nada…» (otro cliente ocupa la 3.ª fecha → «Ese horario ya fue tomado el <fecha>. Elige otro.» en UI y API, 0 reservas creadas, las otras 3 fechas siguen libres, 422 fuera de horario, con 2 semanas sí se crea); `series.test.ts` «todo-o-nada», «cancha divisible» (Media A/Completa), «fecha pasada» y «concurrencia» | e2e + integración | ✔ pasa |
+| CA-17 *(CR-01)* | `series.e2e.ts` «CA-17 cancelar las próximas…» (UI «Cancelar las próximas», 2 canceladas y 2 ya jugadas intactas, repetir → `{ cancelled: 0 }`, serie ajena e inexistente → 404, horarios liberados); `series.test.ts` «ocurrencias independientes» con `now` inyectado | e2e + integración | ✔ pasa |
+| CA-18 *(CR-01)* | `series.e2e.ts` «CA-18 el admin crea una serie para un invitado…» (formulario Nueva reserva con «Repetir cada semana», `createdBy: admin` e invitado en las 3, cobro de una ocurrencia jugada no cambia las demás, la futura → 422, sin teléfono 400, choque 409 con fecha y sin crear nada); `series.test.ts` «cada ocurrencia se cobra por separado» | e2e + integración | ✔ pasa |
+| RN-12 / RN-13 *(CR-01)* | `series.test.ts` («todo-o-nada», «ocurrencias independientes») y los e2e CA-16/CA-17/CA-18 | integración + e2e | ✔ pasa |
+
+**Series con ocurrencias ya empezadas (CA-17, CA-18).** El servidor e2e usa el reloj real y la API no crea ocurrencias pasadas (RN-04), así que `series.e2e.ts` arma la serie como existiría semanas después: las ocurrencias futuras se crean con la API real (`POST /api/bookings/series` o el formulario del admin) y las ya jugadas se siembran con `seedPastBooking` pasándole el mismo `seriesId` (opción `seriesId` del fixture; también acepta `daysAgo` negativo). El inicio de la serie «con `now` intermedio» (CA-17/CA-18 en la spec) se prueba con `now` inyectado en `series.test.ts`.
 
 **Límites conocidos de la cobertura e2e.** El estado `pasado` de la grilla y «borrar cancha» (la UI no ofrece borrar; el 409 se prueba por API) no se verifican en navegador porque dependen de la hora real de la corrida; los cubren `availability.test.ts` y `admin.test.ts`. «Pádel 1 en mantenimiento» de CA-01 se prueba con Media A en CA-14.
+
+## Evidencia CR-01
+
+Recorrido completo del cambio de requerimiento CR-01 (reservas recurrentes): cambio solicitado → spec → criterios de aceptación → plan → código → pruebas → resultado.
+
+| Paso | Qué ocurrió | Evidencia |
+|---|---|---|
+| 1. Cambio solicitado | 2026-11-17, issue [#11](https://github.com/liversay/Sistema_de_reservas/issues/11): «Un equipo quiere reservar la misma cancha todos los jueves a las 20:00 durante varias semanas.» Los ciclos 1 y 2 no dejaron nada preparado para series (sin `seriesId`). | Issue #11; `specs/implementation-plan.md` («Flujo del cambio CR-01») |
+| 2. Cambio de spec (rama `docs/11-cr-01-recurrentes`, Diegoalevq) | RF-15/RF-16 y RN-12/RN-13; CA-15…CA-18; contratos de API y `bookings.seriesId?` con su índice; plan del ciclo 3, ADR-005 y CHANGELOG; orden de validación de series y mensaje con fecha | `5092733` `specs/requirements.md`, `specs/business-rules.md` · `6434da1` `specs/acceptance-criteria.md` · `41fa2ea` `specs/api.md`, `specs/data-model.md` · `ab05984` `specs/implementation-plan.md`, `docs/decisions.md` (ADR-005), `CHANGELOG.md`, `docs/ai-log.md` · `21cf8d4` `specs/*` (orden de validación, mensaje «…tomado el <fecha>…», CA-16/CA-18) |
+| 3. Criterios de aceptación | CA-15 crear serie · CA-16 todo-o-nada ante conflicto · CA-17 cancelar las próximas · CA-18 serie del admin y pago por ocurrencia | `specs/acceptance-criteria.md` |
+| 4. Plan | Ciclo 3: tarea 10 Spec (Diegoalevq) → tarea 11 Dev (liversay, issue #12) → tarea 12 QA (aaronbatistaa, issue #13) | `specs/implementation-plan.md` |
+| 5. Código (rama `feat/12-series`, liversay) | `d4803e5` API de series (`createSeries`, `cancelFutureInSeries`, rutas, índice) · `b77c704` tipado de la colección en las pruebas · `fac0be1` web: «Repetir cada semana», Mis reservas por serie, «Cancelar las próximas» · `054a9d0` cancelar dentro de la transacción, CA-16 divisible/pasado y ajustes de UI | `src/api/bookings/service.ts`, `src/api/routes/*`, `src/shared/*`, `src/web/src/components/RepeatOption.tsx`, `src/web/src/pages/MyBookings.tsx` |
+| 6. Pruebas (rama `test/13-series-cierre`, aaronbatistaa) | Integración: `tests/integration/series.test.ts` (API con BD de prueba y `now` inyectado). Aceptación: `tests/e2e/series.e2e.ts` (CA-15…CA-18 en navegador). Commit `8c23c59` (#13) | ver tabla CA → prueba |
+| 7. Resultados | `bun test` → **90 pass, 0 fail** · `bunx playwright test` → **20 passed** (16 previos + 4 de series), dos corridas seguidas sobre BD `canchas_e2e` fresca; las pruebas previas siguen en verde (sin regresión) | corrida local del 2026-11-17 |
+
+**Conflicto de series.** Una serie es todo-o-nada (RN-12): ante un choque (409) o una regla incumplida (422) responde con la primera fecha afectada («Ese horario ya fue tomado el 2026-12-03. Elige otro.») y no deja ninguna reserva. Una vez creada, cada ocurrencia es independiente (RN-13): se cancela, se cobra y se marca «no se presentó» por separado.
+
+**Enlaces de revisión**
+
+- Issues: [#11 specs](https://github.com/liversay/Sistema_de_reservas/issues/11), [#12 código](https://github.com/liversay/Sistema_de_reservas/issues/12), [#13 pruebas y cierre](https://github.com/liversay/Sistema_de_reservas/issues/13)
+- PR: pendiente de publicación. <!-- PLACEHOLDER: reemplazar por los enlaces a los PR de #11, #12 y #13 cuando se publiquen las ramas -->
+- CI verde en `main`: **pendiente** (nada se ha publicado aún; verificar el check de GitHub Actions tras el merge).

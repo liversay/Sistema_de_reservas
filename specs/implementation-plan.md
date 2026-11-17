@@ -35,9 +35,9 @@ Estado: ✔ tareas 5 a 9 implementadas y verificadas localmente (73 pruebas `bun
 | 8 | Diegoalevq (Dev) | `feat/8-backoffice` | [#8](https://github.com/liversay/Sistema_de_reservas/issues/8) | Web backoffice |
 | 9 | liversay (QA) | `test/9-e2e` | [#9](https://github.com/liversay/Sistema_de_reservas/issues/9) | Pruebas de aceptación e2e (Playwright) |
 
-## Ciclo 3 (cambio de requerimiento, en curso)
+## Ciclo 3 (cambio de requerimiento, completado ✔)
 
-Estado: la tarea 10 (esta) actualiza las specs con el cambio **CR-01**; las tareas 11 y 12 quedan pendientes. Las issues del ciclo 3 llevan la etiqueta `ciclo-3`; su numeración se desplazó porque el PR #10 ocupó el número 10.
+Estado: ✔ tareas 10 a 12 implementadas y verificadas localmente (90 `bun test` y 20 e2e en verde); **los PR están pendientes de push** y la verificación del CI en `main` también. Las issues del ciclo 3 llevan la etiqueta `ciclo-3`; su numeración se desplazó porque el PR #10 ocupó el número 10.
 
 | Tarea | Responsable (rol) | Rama | Issue | Alcance |
 |---|---|---|---|---|
@@ -51,7 +51,7 @@ Estado: la tarea 10 (esta) actualiza las specs con el cambio **CR-01**; las tare
 2. **Actualizar la spec:** RF-15/RF-16 en `requirements.md`, RN-12/RN-13 en `business-rules.md`.
 3. **Actualizar los criterios de aceptación:** CA-15…CA-18 y su prueba prevista.
 4. **Actualizar contratos y plan:** `api.md`, `data-model.md` (`bookings.seriesId?`, índice), este plan, ADR-005 y CHANGELOG.
-5. *(después)* **Código** (#12) → **pruebas** (#13) → **resultados** en `docs/testing.md`.
+5. **Código** (#12) → **pruebas** (#13) → **resultados** en `docs/testing.md` («Evidencia CR-01»).
 
 Los ciclos 1–2 no dejaron nada preparado para series (sin `seriesId`), para que el cambio sea real.
 Los cambios de este ciclo están marcados con `CR-01` en cada documento.
@@ -64,4 +64,4 @@ RF → RN → CA → prueba. La tabla CA → prueba vive en `docs/testing.md`.
 |---|---|
 | 1 ✔ | CA-01, CA-03 (cálculo), CA-04, CA-05, CA-06 a nivel de dominio y base de datos |
 | 2 | CA-01…CA-14 en API y e2e |
-| 3 *(CR-01)* | CA-15…CA-18 (pendientes de implementación y pruebas: #12, #13) |
+| 3 *(CR-01)* | CA-15…CA-18 en API y e2e ✔ |
