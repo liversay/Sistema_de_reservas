@@ -65,7 +65,9 @@ export function PaymentsDashboard({
     latest.current?.abort();
     const ctrl = new AbortController();
     latest.current = ctrl;
-    setLoad({ status: "loading" });
+    // Tras una acción (solo cambia refreshKey) se conservan las cifras del mismo rango mientras se
+    // actualizan; si cambió el rango, `ok` deja de coincidir y se ve el esqueleto.
+    setLoad((l) => (l.status === "ok" && l.from === from && l.to === to ? l : { status: "loading" }));
     Promise.all([api.admin.summary(from, to, ctrl.signal), api.admin.payments("pending", ctrl.signal)])
       .then(([summary, pending]) => {
         if (latest.current !== ctrl) return;
