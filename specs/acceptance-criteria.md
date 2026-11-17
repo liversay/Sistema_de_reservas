@@ -104,7 +104,7 @@ Un `now` anterior al turno se asume salvo que se indique lo contrario.
 
 - **Dado** un admin autenticado y una reserva existente de "Fútbol · Media A"
 - **Cuando** cambia los precios de Media A, recorta su horario del sábado y luego la pone en mantenimiento
-- **Entonces** la reserva existente conserva su precio y su horario original; las nuevas reservas usan los precios nuevos, deben caber en el horario nuevo y se rechazan mientras la cancha esté inactiva; una cancha con reservas no puede borrarse (`409`), solo desactivarse; una cancha sin reservas se borra (`204`); el admin puede crear una cancha nueva (p. ej. "Pádel 2", con `spaceIds: ["padel-2"]`, espacio que se crea en `spaces` si no existía) y aparece en la disponibilidad con sus precios y horario.
+- **Entonces** la reserva existente conserva su precio y su horario original; las nuevas reservas usan los precios nuevos, deben caber en el horario nuevo y se rechazan mientras la cancha esté inactiva; una cancha con reservas no puede borrarse (`409`), solo desactivarse; una cancha sin reservas se borra (`204`); el admin puede crear una cancha nueva (p. ej. "Pádel 2", con `id: "padel-2"` y `spaceIds: ["padel-2"]`, espacio que se crea en `spaces` si no existía) y aparece en la disponibilidad con sus precios y horario.
 
 ## Prueba prevista por CA (ciclo 2)
 

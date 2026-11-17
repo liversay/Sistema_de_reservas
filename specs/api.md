@@ -2,8 +2,9 @@
 
 Base `/api`, JSON (`Content-Type: application/json`). Fechas `YYYY-MM-DD`, horas `HH:MM`. Sesión por
 cookie firmada `sid` (httpOnly, `SameSite=Lax`) que contiene el `userId` (ver ADR-004). La app se
-construye con `createApp({ db, client, now?, secret })`; `now` es inyectable para las pruebas
-(RN-05, RN-06, RN-07).
+construye con `createApp({ db, client, now?, secret })` donde `now?: () => Date` es una función
+(por defecto `() => new Date()`) inyectable en las pruebas (RN-05, RN-06, RN-07). Cada ruta llama
+`now()` una vez por petición y pasa a los servicios un `now: Date` ya resuelto.
 
 ## Convenciones
 
@@ -24,11 +25,12 @@ mensaje de cada campo inválido. Mensaje de choque exacto: `"Ese horario ya fue 
 ### Recursos
 
 - **Usuario** (nunca incluye `passwordHash`): `{ id, name, email, phone, role: "client"|"admin" }`.
-- **Reserva**: `{ id, courtId, courtName, date, startTime, endTime, durationMin, spaceIds, price, status: "confirmada"|"cancelada"|"no_show", payment: { status: "pendiente"|"pagado", amount?, method?, paidAt?, paidBy? }, createdBy: "client"|"admin", userId?, guest?: { name, phone }, createdAt }`.
-  `startTime`/`endTime` se derivan de `startSlot` y `durationMin`. `played` (boolean derivado de `hasEnded` con `now`) acompaña a la reserva en las respuestas de admin.
-- **Cancha**: `{ id, name, sport, format?, spaceIds, active, prices: { "60", "90", "120" }, schedule: [{ weekday: 0..6, open, close, closed }] }`.
+- **Reserva**: `{ id, courtId, courtName, date, startTime, endTime, durationMin, spaceIds, price, status: "confirmada"|"cancelada"|"no_show", payment: { status: "pendiente"|"pagado", amount?, method?, paidAt?, paidBy? }, createdBy: "client"|"admin", user?: { name, phone }, guest?: { name, phone }, createdAt }`.
+  `startTime`/`endTime` se derivan de `startSlot` y `durationMin`. Exactamente uno de `user` (reserva de cliente) o `guest` (reserva de admin para invitado). En **todas** las respuestas de admin que listan o devuelven reservas (`GET /api/admin/bookings`, `GET /api/admin/payments` y las mutaciones) se añade `played: boolean` (derivado con `hasEnded` y `now`).
+- **Cancha**: `{ id, name, sport, format?, spaceIds, active, prices: { "60", "90", "120" }, schedule: [{ weekday: 0..6, open, close, closed }] }`. En el cuerpo de `POST`/`PUT`: `prices` con las tres claves `"60"`, `"90"`, `"120"` y números positivos; cada item de `schedule` con `weekday` entero 0–6, `open` y `close` `"HH:MM"` y `closed` booleano; `open < close`, si no `400`.
 - **Ids sembrados de cancha:** `media-a`, `media-b`, `completa`, `padel-1`, `basquet-1`.
-- **Orden de validación en rutas que crean reservas:** sesión/rol (401/403) → cuerpo Zod (400) → cancha existe (404) → regla de negocio (422: inactiva, fuera de horario, pasado) → choque (409).
+- **Orden de validación en rutas que crean reservas:** sesión/rol (401/403) → cuerpo Zod (400) → cancha existe (404) → regla de negocio (422: inactiva, fuera de horario, pasado) → choque (409). La capa Zod de la ruta devuelve `400` ante `startTime` o `durationMin` mal formados antes de llegar al servicio (que de otro modo respondería `422`).
+- **Orden de validación en pago y no-show:** sesión/rol (401/403) → cuerpo Zod (400, solo pago) → reserva existe (404) → estado (409: no está `confirmada`, o ya pagada) → reloj (422: aún no terminó). Un pago o no-show sobre una reserva cancelada o `no_show` que además no terminó responde `409`, no `422`.
 
 ### Reglas de acceso
 
@@ -40,7 +42,7 @@ trata como sin sesión (`401`).
 
 | Método y ruta | Descripción | CA |
 |---|---|---|
-| `GET /api/availability?date=` | `200 { date, courts: [{ id, name, sport, format?, blocks: [{ time: "HH:MM", state }] }] }`. Solo canchas activas. `state` es exactamente uno de `libre` \| `ocupado` \| `cerrado` \| `pasado`; `cerrado` = fuera del horario de atención ese día; `pasado` = bloque que ya inició (respecto a `now`). `400` si `date` falta o es inválida. | CA-01, CA-02, CA-03 |
+| `GET /api/availability?date=` | `200` arreglo (sin envoltorio) `[{ courtId, name, sport, format?, prices: { "60", "90", "120" }, slots: [{ slot, time: "HH:MM", state }] }]`, una entrada por cancha activa; `slot` es el índice de bloque de 30 min y `prices` permite mostrar el precio (CA-03). `state` es exactamente uno de `libre` \| `ocupado` \| `cerrado` \| `pasado`; `cerrado` = fuera del horario de atención ese día; `pasado` = bloque que ya inició (respecto a `now`). `400` si `date` falta o es inválida. | CA-01, CA-02, CA-03 |
 
 ## Auth
 
@@ -65,13 +67,13 @@ trata como sin sesión (`401`).
 |---|---|---|---|
 | `GET /api/admin/bookings?date=` | — | `200 [reserva]` del día (todos los estados) con `played`, y cliente (`user: { name, phone }`) o `guest`; `400` fecha inválida | CA-10 |
 | `POST /api/admin/bookings` | `{ courtId, date, startTime, durationMin, guest: { name, phone } }` | `201` reserva con `createdBy: admin` y `guest`; `400` (falta nombre o teléfono); `404` cancha; `409` choque; `422` horario, pasado o cancha inactiva | CA-11 |
-| `POST /api/admin/bookings/:id/payment` | `{ amount, method: "efectivo"\|"transferencia"\|"tarjeta" }` con `amount > 0` | `200` reserva con `payment: { status: pagado, amount, method, paidAt, paidBy }` (`paidBy` = id del admin de la sesión); `400`; `404`; `409` ya pagada, `cancelada` o `no_show`; `422` aún no terminó | CA-12, CA-13 |
-| `POST /api/admin/bookings/:id/no-show` | — | `200` reserva con `status: no_show` (conserva los bloques); `404`; `409` no está `confirmada`; `422` aún no terminó | CA-13 |
+| `POST /api/admin/bookings/:id/payment` | `{ amount, method: "efectivo"\|"transferencia"\|"tarjeta" }` con `amount > 0` | `200` reserva con `payment: { status: pagado, amount, method, paidAt, paidBy }` (`paidBy` = id del admin de la sesión); `400`; `404`; `409` ya pagada, `cancelada` o `no_show`; `422` aún no terminó (el `409` se evalúa antes que el `422`) | CA-12, CA-13 |
+| `POST /api/admin/bookings/:id/no-show` | — | `200` reserva con `status: no_show` (conserva los bloques); `404`; `409` no está `confirmada`; `422` aún no terminó (el `409` se evalúa antes que el `422`) | CA-13 |
 | `POST /api/admin/bookings/:id/cancel` | — | `200` reserva `cancelada` y bloques liberados; `404`; `409` no está `confirmada`; sin restricción de hora (RN-06) | CA-10 |
 | `GET /api/admin/payments?status=pending\|paid` | — | `200 [reserva]`. `pending` = por cobrar (jugada, `confirmada`, pago `pendiente`); `paid` = cobradas (`payment.status = pagado`); `400` si `status` falta o es otro valor | CA-12, CA-13 |
 | `GET /api/admin/courts` | — | `200 [cancha]` (incluye inactivas) | CA-14 |
 | `GET /api/admin/courts/:id` | — | `200 cancha`; `404` | CA-14 |
-| `POST /api/admin/courts` | `{ name, sport, format?, spaceIds, active, prices, schedule }` | `201` cancha con id generado; `400`; `409` si el id derivado ya existe | CA-14 |
+| `POST /api/admin/courts` | `{ id, name, sport, format?, spaceIds, active, prices, schedule }`; `id` obligatorio en kebab-case `/^[a-z0-9-]+$/` | `201` cancha; `400` (incluye `id` inválido); `409` si el `id` ya existe | CA-14 |
 | `PUT /api/admin/courts/:id` | mismo cuerpo | `200` cancha; `400`; `404`. Reemplazo completo | CA-14 |
 | `DELETE /api/admin/courts/:id` | — | `204`; `404`; `409` si la cancha tiene reservas (solo desactivarla) | CA-14 |
 
