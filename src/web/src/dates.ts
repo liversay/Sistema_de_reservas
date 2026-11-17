@@ -30,6 +30,30 @@ export function longDate(date: string): string {
   return `${WEEKDAY_LONG[d.getDay()]} ${d.getDate()} ${MONTH[d.getMonth()]}`;
 }
 
+const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => `${String(Math.floor(i / 2)).padStart(2, "0")}:${i % 2 ? "30" : "00"}`);
+
+/** Horas en pasos de 30 min (00:00 … 23:30). */
+export function timeOptions(): string[] {
+  return TIME_OPTIONS;
+}
+
+/** Lunes = 0, como el esquema de horarios de la API. */
+export const WEEKDAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+
+export function addDays(date: string, n: number): string {
+  const d = parseIso(date);
+  return isoDate(new Date(d.getFullYear(), d.getMonth(), d.getDate() + n));
+}
+
+/** Lunes = 0 para una fecha YYYY-MM-DD. */
+export function weekdayIndex(date: string): number {
+  return (parseIso(date).getDay() + 6) % 7;
+}
+
+export function money(n: number): string {
+  return `$${Number.isInteger(n) ? n : n.toFixed(2)}`;
+}
+
 export function durationLabel(min: number): string {
   return min === 60 ? "1 h" : min === 90 ? "1 h 30" : "2 h";
 }

@@ -25,6 +25,12 @@ export function Header() {
             <CalendarIcon />
             <span>Mis reservas</span>
           </NavLink>
+          {user?.role === "admin" && (
+            <NavLink to="/admin" className="navlink">
+              <GridIcon />
+              <span>Administración</span>
+            </NavLink>
+          )}
           {user ? (
             <button
               type="button"
