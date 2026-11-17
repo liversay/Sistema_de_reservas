@@ -1,8 +1,8 @@
-import { bookViaApi, cell, dayOffset, expect, freeCell, gridUrl, loginAdmin, newContext, registerViaApi, seedPastBooking, test } from "./fixtures";
+import { bookViaApi, cell, dayOffset, expect, freeCell, gridUrl, loginAdmin, longDate, newContext, registerViaApi, seedPastBooking, test } from "./fixtures";
 
 // CR-01 (reservas recurrentes), CA-15…CA-18. Cada prueba usa una cancha/hora propia para no depender del orden.
 
-type Row = { id: string; date: string; status: string; seriesId?: string; payment: { status: string }; startTime: string };
+type Row = { id: string; date: string; status: string; seriesId?: string; payment: { status: string }; startTime: string; price: number; basePrice: number; discountPct: number };
 const addDays = (iso: string, n: number) => {
   const [y, m, d] = iso.split("-").map(Number) as [number, number, number];
   const t = new Date(y, m - 1, d + n);
@@ -16,14 +16,15 @@ test("CA-15 el cliente repite cada semana: 4 reservas con un mismo seriesId, cad
   await registerViaApi(context, "ca15");
   await page.goto(gridUrl(date));
 
-  await freeCell(page, "Pádel 1", "17:00").click();
+  await freeCell(page, "Pádel 1", "5:00 p. m.").click();
   const panel = page.locator("aside.panel");
   const repeat = panel.getByTestId("repetir");
   await repeat.getByLabel("Repetir cada semana").check();
   await repeat.getByLabel("Semanas").selectOption("4");
   await expect(repeat.getByRole("listitem")).toHaveCount(4);
   await expect(panel.getByTestId("serie-total")).toContainText("4 reservas");
-  await expect(panel.getByTestId("serie-total")).toContainText("$80");
+  // Socio: 20 menos 10 % = 18 por ocurrencia, 72 en total.
+  await expect(panel.getByTestId("serie-total")).toContainText("$72");
   await panel.getByRole("button", { name: "Confirmar 4 reservas" }).click();
   await expect(page.getByText("Serie confirmada: 4 reservas.")).toBeVisible();
 
@@ -41,7 +42,7 @@ test("CA-15 el cliente repite cada semana: 4 reservas con un mismo seriesId, cad
   for (const b of rows) {
     expect(b.status).toBe("confirmada");
     expect(b.payment.status).toBe("pendiente");
-    expect((b as unknown as { price: number }).price).toBe(20);
+    expect(b).toMatchObject({ price: 18, basePrice: 20, discountPct: 10 });
   }
   // weeks fuera de 2…8 → 400.
   for (const weeks of [1, 9]) {
@@ -50,7 +51,7 @@ test("CA-15 el cliente repite cada semana: 4 reservas con un mismo seriesId, cad
   }
   // La primera ocurrencia ocupa la cuadrícula del primer día.
   await page.goto(gridUrl(date));
-  await expect(cell(page, "Pádel 1", "17:00", "ocupado")).toBeVisible();
+  await expect(cell(page, "Pádel 1", "5:00 p. m.", "ocupado")).toBeVisible();
 });
 
 test("CA-16 serie todo-o-nada: un choque con fecha impide crear cualquier ocurrencia", async ({ page, context, browser }) => {
@@ -62,7 +63,7 @@ test("CA-16 serie todo-o-nada: un choque con fecha impide crear cualquier ocurre
 
   await registerViaApi(context, "ca16");
   await page.goto(gridUrl(date));
-  await freeCell(page, "Básquet 1", "17:00").click();
+  await freeCell(page, "Básquet 1", "5:00 p. m.").click();
   const panel = page.locator("aside.panel");
   await panel.getByTestId("repetir").getByLabel("Repetir cada semana").check();
   await panel.getByTestId("repetir").getByLabel("Semanas").selectOption("4");
@@ -115,7 +116,7 @@ test("CA-17 cancelar las próximas de una serie deja intactas las ya empezadas y
   await page.goto("/mis-reservas");
   const serie = page.getByTestId("serie");
   await expect(serie).toContainText("2 próximas");
-  await page.getByRole("button", { name: "Cancelar las próximas de la serie Fútbol · Media B 17:00" }).click();
+  await page.getByRole("button", { name: "Cancelar las próximas de la serie Fútbol · Media B 5:00 p. m." }).click();
   await serie.getByRole("button", { name: "Sí, cancelar" }).click();
   await expect(page.getByText("Cancelaste 2 reservas de la serie. Los horarios quedaron libres.")).toBeVisible();
 
@@ -155,7 +156,7 @@ test("CA-18 el admin crea una serie para un invitado y cada ocurrencia se cobra 
   const guest = { name: "Invitada Serie18", phone: "+593 98 180 0018" };
 
   await page.goto(`/admin?fecha=${sat}`);
-  await page.getByRole("button", { name: "Nueva reserva", exact: true }).click();
+  await page.getByRole("button", { name: "+ Nueva reserva", exact: true }).click();
   const form = page.getByRole("form", { name: "Nueva reserva" });
   await form.getByLabel("Cancha").selectOption({ label: "Pádel 1" });
   await form.getByLabel("Fecha").fill(sat);
@@ -166,7 +167,7 @@ test("CA-18 el admin crea una serie para un invitado y cada ocurrencia se cobra 
   await form.getByLabel("Semanas").selectOption("3");
   await expect(form.getByTestId("nueva-precio")).toHaveText("$60");
   await form.getByRole("button", { name: "Crear 3 reservas" }).click();
-  await expect(page.getByText(`Serie creada: 3 reservas semanales desde el ${sat}, Pádel 1, 09:00–10:00, $20 c/u.`)).toBeVisible();
+  await expect(page.getByText(`Serie creada: 3 reservas semanales desde el ${longDate(sat)}, Pádel 1, 9:00 a. m. – 10:00 a. m., $20 c/u.`)).toBeVisible();
 
   const list = async (d: string) =>
     ((await (await context.request.get(`/api/admin/bookings?date=${d}`)).json()) as (Row & { createdBy: string; guest?: { name: string }; courtId: string })[]).filter(

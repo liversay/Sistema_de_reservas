@@ -17,7 +17,30 @@ export function dayOffset(offset: number): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-/** Primer día dentro de la tira de 7 días (mañana en adelante) con ese día de la semana (0 = domingo). */
+/** Suma `n` días (puede ser negativo) a una fecha YYYY-MM-DD. */
+export function addDays(iso: string, n: number): string {
+  const [y, m, d] = iso.split("-").map(Number) as [number, number, number];
+  const t = new Date(y, m - 1, d + n);
+  return `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}`;
+}
+
+const WEEKDAYS_ES = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+const MONTHS_ES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+/** "2026-11-19" → "jueves 19 de noviembre de 2026" (CR-02: así sale en toda la interfaz; el CSS puede capitalizarla). */
+export function longDate(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number) as [number, number, number];
+  return `${WEEKDAYS_ES[new Date(y, m - 1, d).getDay()]} ${d} de ${MONTHS_ES[m - 1]} de ${y}`;
+}
+
+/** "20:00" → "8:00 p. m.", "00:30" → "12:30 a. m." (CR-02: la interfaz usa 12 h; la API sigue en HH:MM). Un texto ya en 12 h se deja igual. */
+export function time12(t: string): string {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(t);
+  if (!m) return t;
+  const h = Number(m[1]);
+  return `${h % 12 === 0 ? 12 : h % 12}:${m[2]} ${h < 12 ? "a. m." : "p. m."}`;
+}
+
+/** Primer día dentro de los próximos 7 días (mañana en adelante; todos caben en el horizonte de 30 días) con ese día de la semana (0 = domingo). */
 export function nextWeekday(jsDay: number): string {
   for (let i = 1; i <= 7; i++) {
     const [y, m, d] = dayOffset(i).split("-").map(Number) as [number, number, number];
@@ -47,10 +70,11 @@ export async function loginAdmin(context: BrowserContext) {
 }
 
 export const gridUrl = (date: string, extra = "") => `/?fecha=${date}${extra}`;
+/** Bloque libre de la cuadrícula del cliente; `time` en 24 h ("20:00") o ya en 12 h ("8:00 p. m."): el nombre accesible lleva 12 h. */
 export const freeCell = (page: Page, court: string, time: string) =>
-  page.getByRole("button", { name: `${court} ${time} libre`, exact: true });
+  page.getByRole("button", { name: `${court} ${time12(time)} libre`, exact: true });
 export const cell = (page: Page, court: string, time: string, state: "libre" | "ocupado" | "cerrado" | "ya pasó") =>
-  page.getByLabel(`${court} ${time} ${state}`, { exact: true });
+  page.getByLabel(`${court} ${time12(time)} ${state}`, { exact: true });
 
 /** Reserva por la API (sesión del contexto dado) y devuelve la reserva. */
 export async function bookViaApi(
