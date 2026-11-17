@@ -68,40 +68,63 @@ Un `now` anterior al turno se asume salvo que se indique lo contrario.
 
 - **Dado** el formulario de registro
 - **Cuando** se envía con email inválido, teléfono `"abc"`, contraseña de 7 caracteres, o nombre de menos de 2 caracteres
-- **Entonces** responde `400` indicando el campo inválido y no crea usuario; con datos válidos crea la cuenta con rol cliente y abre sesión; un email ya registrado responde `409`.
+- **Entonces** responde `400` con `fields` indicando cada campo inválido y no crea usuario; con datos válidos crea la cuenta con rol cliente, responde `201` con el usuario (sin hash de contraseña) y abre sesión mediante la cookie `sid`; un email ya registrado responde `409`.
 
 ## CA-09 Inicio de sesión (RF-08)
 
 - **Dado** una cuenta registrada
 - **Cuando** inicia sesión con credenciales correctas
-- **Entonces** `GET /api/auth/me` devuelve su usuario; con contraseña incorrecta responde `401` sin crear sesión; tras `logout`, `me` responde `401`; reservar sin sesión responde `401`.
+- **Entonces** `GET /api/auth/me` devuelve su usuario; con contraseña incorrecta responde `401` sin crear sesión; tras `logout` (`204`), `me` responde `401`; reservar sin sesión responde `401`; una cookie `sid` alterada se trata como sin sesión (`401`).
 
 ## CA-10 Admin ve reservas del día (RF-09; RN-06)
 
 - **Dado** un admin autenticado y reservas del `2026-11-19` (confirmada, cancelada, jugada)
 - **Cuando** abre "Reservas del día" de esa fecha
-- **Entonces** ve una tabla con cancha, hora, cliente (o invitado), estado y pago de cada reserva, y puede cancelar cualquiera de ellas liberando sus bloques; un cliente que llama a `/api/admin/*` recibe `403` y sin sesión `401`.
+- **Entonces** ve una tabla con cancha, hora, cliente (o invitado), estado y pago de cada reserva, y puede cancelar cualquiera de ellas (`200`) liberando sus bloques; cancelar una ya cancelada responde `409`; un cliente que llama a cualquier ruta `/api/admin/*` recibe `403` y sin sesión `401`.
 
 ## CA-11 Admin crea reserva para invitado (RF-10; RN-09)
 
 - **Dado** un admin autenticado y "Básquet 1" libre el `2026-11-21` a las 10:00
 - **Cuando** crea una reserva con nombre y teléfono de un cliente sin cuenta
-- **Entonces** se crea una reserva con `createdBy = admin` y datos de invitado, que ocupa los bloques; si falta nombre o teléfono responde `400`; si el turno choca responde `409`, y si cae fuera de horario o en el pasado responde `422`.
+- **Entonces** se crea (`201`) una reserva con `createdBy = admin` y datos de invitado, que ocupa los bloques y aparece en "Reservas del día"; si falta nombre o teléfono responde `400`; si el turno choca responde `409`, y si cae fuera de horario o en el pasado responde `422`.
 
 ## CA-12 Pago solo después de jugar (RF-11; RN-07, RN-11)
 
 - **Dado** una reserva `confirmada` de "Fútbol · Media A" de 18:00 a 19:00 del `2026-11-19`, precio 50 USD, pago `pendiente`
 - **Cuando** el admin registra un pago con `now` = 18:30
-- **Entonces** responde `422`, el pago sigue `pendiente` y la reserva no figura en "por cobrar" (aún no es jugada); con `now` = 19:00 o posterior la reserva ya es jugada y aparece en "por cobrar" mientras no se pague; el pago acepta monto (prellenado con 50 USD, ajustable), método (efectivo, transferencia o tarjeta) y quién cobró, y pasa a `pagado`, con lo que sale de "por cobrar" y aparece en "cobrados"; un segundo pago sobre la misma reserva responde `409`.
+- **Entonces** responde `422`, el pago sigue `pendiente` y la reserva no figura en "por cobrar" (aún no es jugada); con `now` = 19:00 o posterior la reserva ya es jugada y aparece en "por cobrar" mientras no se pague; el pago acepta monto (prellenado con 50 USD, ajustable), método (efectivo, transferencia o tarjeta) y quién cobró, y pasa a `pagado` con `paidBy` = admin de la sesión, con lo que sale de `GET /api/admin/payments?status=pending` y aparece en `status=paid`; un segundo pago sobre la misma reserva, o sobre una `cancelada`, responde `409`; monto `0` o método distinto de los tres responde `400`.
 
 ## CA-13 No se presentó (RF-12; RN-11)
 
 - **Dado** una reserva jugada, `confirmada`, con pago `pendiente`
 - **Cuando** el admin la marca "no se presentó"
-- **Entonces** su estado pasa a `no_show`, sale de "por cobrar" y registrar un pago responde `409`; marcarla antes de que termine responde `422`.
+- **Entonces** su estado pasa a `no_show`, sale de "por cobrar" y registrar un pago responde `409`; marcarla antes de que termine responde `422`; marcar una que no está `confirmada` responde `409`; la reserva conserva sus bloques.
 
 ## CA-14 Configurar canchas, precios, horario y estado (RF-13, RF-14; RN-04, RN-08, RN-10)
 
 - **Dado** un admin autenticado y una reserva existente de "Fútbol · Media A"
 - **Cuando** cambia los precios de Media A, recorta su horario del sábado y luego la pone en mantenimiento
-- **Entonces** la reserva existente conserva su precio y su horario original; las nuevas reservas usan los precios nuevos, deben caber en el horario nuevo y se rechazan mientras la cancha esté inactiva; una cancha con reservas no puede borrarse (`409`), solo desactivarse; el admin puede crear una cancha nueva (p. ej. "Pádel 2").
+- **Entonces** la reserva existente conserva su precio y su horario original; las nuevas reservas usan los precios nuevos, deben caber en el horario nuevo y se rechazan mientras la cancha esté inactiva; una cancha con reservas no puede borrarse (`409`), solo desactivarse; una cancha sin reservas se borra (`204`); el admin puede crear una cancha nueva (p. ej. "Pádel 2", con `spaceIds: ["padel-2"]`, espacio que se crea en `spaces` si no existía) y aparece en la disponibilidad con sus precios y horario.
+
+## Prueba prevista por CA (ciclo 2)
+
+Cada CA tiene al menos una prueba prevista. El detalle y el estado viven en `docs/testing.md`.
+Integración de API = `bun test` sobre `createApp` con BD de prueba y `now` inyectado (tarea 6);
+e2e = Playwright (tarea 9, `tests/e2e/*.e2e.ts`, cada prueba nombra sus CA).
+
+| CA | Prueba prevista en API (tarea 6) | Prueba prevista e2e (tareas 7–9) |
+|---|---|---|
+| CA-01 | `GET /api/availability`: cuatro estados, Completa ocupada con Media A, cancha inactiva ausente, `400` fecha inválida | cuadrícula del jueves |
+| CA-02 | — (filtro de interfaz) | filtrar por pádel y quitar el filtro |
+| CA-03 | precio calculado por el servidor para 60/90/120 | panel "Tu reserva" |
+| CA-04 | `POST /api/bookings` `201`, `GET /api/bookings/mine` | reservar Pádel 1 y ver "Mis reservas" |
+| CA-05 | choque parcial `409` con mensaje exacto; 10 concurrentes vía HTTP, 1 éxito | segundo cliente recibe el aviso |
+| CA-06 | Media A vs Completa `409` y a la inversa; Media B libre | — |
+| CA-07 | cancelar `200`, ajena `404`, ya cancelada `409`, ya empezada `422`; turno reservable de nuevo | cancelar desde "Mis reservas" |
+| CA-08 | registro `201`, `400` con `fields` por campo, `409` email repetido | formulario de registro |
+| CA-09 | login `200`/`401`, `me`, logout `204`, cookie alterada `401`, reservar sin sesión `401` | iniciar y cerrar sesión |
+| CA-10 | `GET` y cancelar admin; `401`/`403` en todas las rutas `/api/admin/*` | tabla "Reservas del día" |
+| CA-11 | invitado `201`, `400`, `409`, `422` | crear reserva para invitado |
+| CA-12 | pago con `now` 18:30 `422` y 19:00 `200`; segundo pago `409`; listas `pending`/`paid`; `amount` 0 `400` | registrar cobro |
+| CA-13 | no-show `200`, antes de terminar `422`, luego pago `409`, ya no está en `pending` | marcar "no se presentó" |
+| CA-14 | PUT precios/horario/inactiva y reserva existente intacta; `DELETE` con reservas `409`, sin reservas `204`; crear "Pádel 2" con espacio nuevo | edición de cancha en backoffice |
