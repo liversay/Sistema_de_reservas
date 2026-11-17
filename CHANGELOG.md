@@ -2,6 +2,10 @@
 
 ## [Sin publicar]
 
+## [Ciclo 2]
+
+- Pruebas de aceptación e2e con Playwright (Chromium) para CA-01…CA-14: cliente, doble reserva con dos contextos de navegador, validaciones de registro y backoffice; BD `canchas_e2e` fresca por corrida (`bun run e2e:server`) y fixture de reservas pasadas (#9).
+
 ## [Ciclo 1]
 
 - Especificaciones ODD/SDD (RN-01…RN-11, CA-01…CA-14), ADR y registro de IA (#1).
