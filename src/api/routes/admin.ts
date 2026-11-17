@@ -1,9 +1,9 @@
 import { Hono } from "hono";
 import type { Db, MongoClient } from "mongodb";
-import { GuestBookingInput, PaymentInput, isRealDate, type Booking } from "@canchas/shared";
+import { GuestBookingInput, GuestSeriesInput, PaymentInput, isRealDate, type Booking } from "@canchas/shared";
 import { ZodError } from "zod";
 import { requireAdmin, requireUser, type AppEnv } from "../auth";
-import { cancelBooking, createBooking } from "../bookings/service";
+import { cancelBooking, cancelFutureInSeries, createBooking, createSeries } from "../bookings/service";
 import {
   CourtBody,
   createCourt,
@@ -39,6 +39,21 @@ export function adminRoutes(deps: { db: Db; client: MongoClient; secret: string 
     const { guest, ...input } = GuestBookingInput.parse(await readBody(c));
     const b = await createBooking(ctx(c.get("now")), input, { guest }, "admin");
     return c.json((await out(c, [b]))[0], 201);
+  });
+
+  r.post("/bookings/series", async (c) => {
+    const { guest, ...input } = GuestSeriesInput.parse(await readBody(c));
+    const { seriesId, bookings } = await createSeries(ctx(c.get("now")), input, { guest }, "admin");
+    return c.json({ seriesId, bookings: await out(c, bookings) }, 201);
+  });
+
+  r.post("/bookings/series/:seriesId/cancel-future", async (c) => {
+    const user = c.get("user");
+    const cancelled = await cancelFutureInSeries(ctx(c.get("now")), c.req.param("seriesId"), {
+      userId: user._id,
+      role: "admin",
+    });
+    return c.json({ cancelled });
   });
 
   r.post("/bookings/:id/payment", async (c) => {

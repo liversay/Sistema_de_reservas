@@ -29,6 +29,17 @@ export const GuestBookingInput = BookingInput.extend({
   guest: z.object({ name: z.string().min(2).max(60), phone }),
 });
 
+/** CR-01: serie semanal; `date` es la 1.ª ocurrencia. */
+export const SeriesInput = BookingInput.extend({
+  weeks: z.number().int().min(2, "Mínimo 2 semanas").max(8, "Máximo 8 semanas"),
+});
+
+export const GuestSeriesInput = SeriesInput.extend({
+  guest: z.object({ name: z.string().min(2).max(60), phone }),
+});
+
+export type SeriesInput = z.infer<typeof SeriesInput>;
+
 export const PaymentInput = z.object({
   amount: z.number().positive(),
   method: z.enum(["efectivo", "transferencia", "tarjeta"]),

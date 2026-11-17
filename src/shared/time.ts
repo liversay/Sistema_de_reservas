@@ -34,3 +34,9 @@ export function weekdayOf(date: string): number {
   const js = new Date(Date.UTC(y, mo - 1, d)).getUTCDay(); // 0 = domingo
   return (js + 6) % 7;
 }
+
+/** Suma `n` días a una fecha YYYY-MM-DD (calendario, sin zona horaria). */
+export function addDays(date: string, n: number): string {
+  const [y, mo, d] = date.split("-").map(Number) as [number, number, number];
+  return new Date(Date.UTC(y, mo - 1, d + n)).toISOString().slice(0, 10);
+}

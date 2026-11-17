@@ -30,6 +30,7 @@ export async function bookingResources(db: Db, bookings: Booking[], now: Date, o
       ...(b.userId ? { user: { name: u?.name ?? "", phone: u?.phone ?? "" } } : {}),
       ...(b.guest ? { guest: b.guest } : {}),
       createdAt: b.createdAt,
+      ...(b.seriesId ? { seriesId: b.seriesId } : {}),
       ...(opts.admin ? { played: hasEnded(b.date, b.startSlot, b.durationMin, now) } : {}),
     };
   });

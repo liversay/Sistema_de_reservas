@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import type { Db, MongoClient } from "mongodb";
-import { BookingInput, type Booking } from "@canchas/shared";
+import { BookingInput, SeriesInput, type Booking } from "@canchas/shared";
 import { requireUser, type AppEnv } from "../auth";
-import { cancelBooking, createBooking } from "../bookings/service";
+import { cancelBooking, cancelFutureInSeries, createBooking, createSeries } from "../bookings/service";
 import { readBody } from "../http";
 import { bookingResources } from "../resources";
 
@@ -16,6 +16,23 @@ export function bookingRoutes(deps: { db: Db; client: MongoClient; secret: strin
     const now = c.get("now");
     const b = await createBooking(ctx(now), input, { userId: c.get("user")._id }, "client");
     return c.json((await bookingResources(deps.db, [b], now, { admin: false }))[0], 201);
+  });
+
+  // CR-01: antes de "/:id/..." no hay colisión (rutas de distinta forma), pero se agrupan aquí.
+  r.post("/series", async (c) => {
+    const input = SeriesInput.parse(await readBody(c));
+    const now = c.get("now");
+    const { seriesId, bookings } = await createSeries(ctx(now), input, { userId: c.get("user")._id }, "client");
+    return c.json({ seriesId, bookings: await bookingResources(deps.db, bookings, now, { admin: false }) }, 201);
+  });
+
+  r.post("/series/:seriesId/cancel-future", async (c) => {
+    const user = c.get("user");
+    const cancelled = await cancelFutureInSeries(ctx(c.get("now")), c.req.param("seriesId"), {
+      userId: user._id,
+      role: "client",
+    });
+    return c.json({ cancelled });
   });
 
   r.get("/mine", async (c) => {

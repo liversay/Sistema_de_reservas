@@ -40,6 +40,8 @@ export interface Booking {
     paidBy?: string;
   };
   createdAt: string;
+  /** CR-01: agrupa las ocurrencias de una serie semanal. */
+  seriesId?: string;
 }
 
 export interface User {
