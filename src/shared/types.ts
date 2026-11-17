@@ -1,6 +1,6 @@
 export type Sport = "futbol" | "padel" | "basquet";
 export type Duration = 60 | 90 | 120;
-export type PaymentMethod = "efectivo" | "transferencia" | "tarjeta";
+export type PaymentMethod = "efectivo" | "transferencia" | "tarjeta" | "yappy";
 
 export interface ScheduleDay {
   weekday: number; // 0 = lunes … 6 = domingo
@@ -42,6 +42,9 @@ export interface Booking {
   createdAt: string;
   /** CR-01: agrupa las ocurrencias de una serie semanal. */
   seriesId?: string;
+  /** CR-02: precio de lista y % de socio vigente al reservar; `price` ya incluye el descuento. Ausentes en reservas previas. */
+  basePrice?: number;
+  discountPct?: number;
 }
 
 export interface User {

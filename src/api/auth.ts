@@ -40,15 +40,28 @@ export function endSession(c: Context) {
 }
 
 /** Firma inválida o usuario inexistente se tratan como sin sesión. El rol se lee de la BD en cada petición. */
+async function sessionUser(db: Db, secret: string, c: Context<AppEnv>): Promise<User | null> {
+  const sid = await getSignedCookie(c, secret, SESSION_COOKIE);
+  const i = sid ? sid.lastIndexOf(".") : -1;
+  const issuedAt = i > 0 ? Number((sid as string).slice(i + 1)) : NaN;
+  const fresh = Number.isFinite(issuedAt) && c.get("now").getTime() - issuedAt <= SESSION_MAX_AGE_S * 1000;
+  return sid && fresh ? await db.collection<User>("users").findOne({ _id: (sid as string).slice(0, i) }) : null;
+}
+
 export function requireUser(db: Db, secret: string): MiddlewareHandler<AppEnv> {
   return async (c, next) => {
-    const sid = await getSignedCookie(c, secret, SESSION_COOKIE);
-    const i = sid ? sid.lastIndexOf(".") : -1;
-    const issuedAt = i > 0 ? Number((sid as string).slice(i + 1)) : NaN;
-    const fresh = Number.isFinite(issuedAt) && c.get("now").getTime() - issuedAt <= SESSION_MAX_AGE_S * 1000;
-    const user = sid && fresh ? await db.collection<User>("users").findOne({ _id: (sid as string).slice(0, i) }) : null;
+    const user = await sessionUser(db, secret, c);
     if (!user) throw new HttpError(401, "Inicia sesión para continuar.");
     c.set("user", user);
+    await next();
+  };
+}
+
+/** CR-02: lee la sesión si existe; sin sesión válida sigue sin `user` (no responde 401). */
+export function optionalUser(db: Db, secret: string): MiddlewareHandler<AppEnv> {
+  return async (c, next) => {
+    const user = await sessionUser(db, secret, c);
+    if (user) c.set("user", user);
     await next();
   };
 }

@@ -40,3 +40,17 @@ export function addDays(date: string, n: number): string {
   const [y, mo, d] = date.split("-").map(Number) as [number, number, number];
   return new Date(Date.UTC(y, mo - 1, d + n)).toISOString().slice(0, 10);
 }
+
+/** Días de calendario entre dos fechas YYYY-MM-DD (to − from). */
+export function daysBetween(from: string, to: string): number {
+  const p = (s: string) => {
+    const [y, mo, d] = s.split("-").map(Number) as [number, number, number];
+    return Date.UTC(y, mo - 1, d);
+  };
+  return Math.round((p(to) - p(from)) / 86_400_000);
+}
+
+/** Fecha local (YYYY-MM-DD) de un instante: «hoy» para RN-14. */
+export function localDate(now: Date): string {
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}

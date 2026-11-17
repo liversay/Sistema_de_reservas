@@ -33,7 +33,7 @@ describe("CR-01 crear serie (CA-15)", () => {
     expect(r.json.seriesId).toMatch(/^[0-9a-f-]{36}$/);
     expect(r.json.bookings.map((b: any) => b.date)).toEqual(["2026-11-26", "2026-12-03", "2026-12-10", "2026-12-17"]);
     for (const b of r.json.bookings) {
-      expect(b).toMatchObject({ seriesId: r.json.seriesId, price: 50, status: "confirmada", createdBy: "client", user: { name: "Ana Pérez" } });
+      expect(b).toMatchObject({ seriesId: r.json.seriesId, price: 45, basePrice: 50, discountPct: 10, status: "confirmada", createdBy: "client", user: { name: "Ana Pérez" } });
       expect(b.payment.paidBy).toBeUndefined();
     }
     expect(await count({ seriesId: r.json.seriesId })).toBe(4);
@@ -42,11 +42,11 @@ describe("CR-01 crear serie (CA-15)", () => {
     );
   });
 
-  test("400: weeks fuera de 2..8 o no entero, sin sesión 401", async () => {
+  test("400: weeks fuera de 2..8 o no entero; sin sesión y sin guest 400 (CR-02)", async () => {
     for (const weeks of [1, 9, 2.5, "4"]) {
       expect((await t.call("POST", "/api/bookings/series", { cookie: ana, body: series({ weeks, startTime: "20:00" }) })).status).toBe(400);
     }
-    expect((await t.call("POST", "/api/bookings/series", { body: series() })).status).toBe(401);
+    expect((await t.call("POST", "/api/bookings/series", { body: series() })).status).toBe(400);
     expect(await count({ startTime: "20:00" })).toBe(0);
   });
 

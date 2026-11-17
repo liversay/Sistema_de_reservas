@@ -2,8 +2,10 @@ import { MongoServerError, type ClientSession, type Db, type MongoClient } from 
 import {
   DURATIONS,
   addDays,
+  discounted,
   fitsSchedule,
   isPast,
+  localDate,
   priceFor,
   slotsFor,
   toSlot,
@@ -11,6 +13,7 @@ import {
   type Court,
   type SeriesInput,
 } from "@canchas/shared";
+import { getLoyaltyPct } from "../settings";
 import { ConflictError, NotFoundError, RuleError } from "../errors";
 
 export interface Ctx {
@@ -20,6 +23,8 @@ export interface Ctx {
 }
 type Owner = { userId: string } | { guest: { name: string; phone: string } };
 type Input = { courtId: string; date: string; startTime: string; durationMin: 60 | 90 | 120 };
+
+const BOOKING_HORIZON_DAYS = 30;
 
 const isDuplicate = (e: unknown) =>
   e instanceof MongoServerError &&
@@ -50,8 +55,16 @@ function ruleViolation(ctx: Ctx, court: Court, input: Input, date: string): stri
   if (!fitsSchedule(court.schedule, date, startSlot, input.durationMin)) {
     return "El turno queda fuera del horario de atención.";
   }
+  // RN-14: horizonte de 30 días; «hoy» = fecha local de `now`.
+  if (date > addDays(localDate(ctx.now), BOOKING_HORIZON_DAYS)) {
+    return "Solo se puede reservar hasta 30 días de anticipación.";
+  }
   return null;
 }
+
+/** RN-16: solo las reservas con sesión de cliente (owner.userId) llevan el % vigente. */
+const discountFor = (ctx: Ctx, owner: Owner): Promise<number> | number =>
+  "userId" in owner ? getLoyaltyPct(ctx.db) : 0;
 
 function buildOccurrence(
   ctx: Ctx,
@@ -60,9 +73,11 @@ function buildOccurrence(
   date: string,
   owner: Owner,
   createdBy: "client" | "admin",
+  discountPct: number,
   seriesId?: string,
 ) {
   const startSlot = toSlot(input.startTime);
+  const basePrice = priceFor(court.prices, input.durationMin);
   const booking: Booking = {
     _id: crypto.randomUUID(),
     courtId: court._id,
@@ -72,7 +87,9 @@ function buildOccurrence(
     startSlot,
     durationMin: input.durationMin,
     spaceIds: [...court.spaceIds],
-    price: priceFor(court.prices, input.durationMin),
+    price: discounted(basePrice, discountPct),
+    basePrice,
+    discountPct,
     status: "confirmada",
     payment: { status: "pendiente" },
     createdAt: ctx.now.toISOString(),
@@ -94,7 +111,8 @@ export async function createBooking(
   const court = await loadCourt(ctx, input.courtId);
   const violation = ruleViolation(ctx, court, input, input.date);
   if (violation) throw new RuleError(violation);
-  const { booking, locks } = buildOccurrence(ctx, court, input, input.date, owner, createdBy);
+  const pct = await discountFor(ctx, owner);
+  const { booking, locks } = buildOccurrence(ctx, court, input, input.date, owner, createdBy, pct);
 
   const session = ctx.client.startSession();
   try {
@@ -129,7 +147,8 @@ export async function createSeries(
   }
 
   const seriesId = crypto.randomUUID();
-  const rows = dates.map((date) => buildOccurrence(ctx, court, input, date, owner, createdBy, seriesId));
+  const pct = await discountFor(ctx, owner);
+  const rows = dates.map((date) => buildOccurrence(ctx, court, input, date, owner, createdBy, pct, seriesId));
   const bookings = rows.map((r) => r.booking);
   const locks = rows.flatMap((r) => r.locks);
   const slots = slotsFor(toSlot(input.startTime), input.durationMin);

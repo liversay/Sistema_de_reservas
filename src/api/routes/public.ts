@@ -6,6 +6,7 @@ import { getAvailability } from "../availability";
 import { HttpError, publicUser, requireUser, startSession, endSession, type AppEnv } from "../auth";
 import { ConflictError } from "../errors";
 import { readBody } from "../http";
+import { getLoyaltyPct } from "../settings";
 
 export function publicRoutes(deps: { db: Db; secret: string }) {
   const r = new Hono<AppEnv>();
@@ -18,6 +19,8 @@ export function publicRoutes(deps: { db: Db; secret: string }) {
     }
     return c.json(await getAvailability(deps.db, date, c.get("now")));
   });
+
+  r.get("/settings/loyalty", async (c) => c.json({ discountPct: await getLoyaltyPct(deps.db) }));
 
   r.post("/auth/register", async (c) => {
     const input = RegisterInput.parse(await readBody(c));

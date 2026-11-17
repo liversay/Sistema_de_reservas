@@ -40,6 +40,10 @@ export async function seed(db: Db, opts?: { adminEmail?: string; adminPassword?:
   for (const c of COURTS) {
     await db.collection<{ _id: string }>("courts").updateOne({ _id: c._id }, { $setOnInsert: c }, { upsert: true });
   }
+  // CR-02 / RN-16: % de socios inicial (provisional); no pisa el valor que el admin haya editado.
+  await db
+    .collection<{ _id: string; discountPct: number }>("settings")
+    .updateOne({ _id: "loyalty" }, { $setOnInsert: { _id: "loyalty", discountPct: 10 } }, { upsert: true });
   const users = db.collection<User>("users");
   if (!(await users.findOne({ email: adminEmail }))) {
     await users.insertOne({

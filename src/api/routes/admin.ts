@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { Db, MongoClient } from "mongodb";
-import { GuestBookingInput, GuestSeriesInput, PaymentInput, isRealDate, type Booking } from "@canchas/shared";
+import { DateRangeQuery, GuestBookingInput, GuestSeriesInput, LoyaltyInput, PaymentInput, isRealDate, type Booking } from "@canchas/shared";
 import { ZodError } from "zod";
 import { requireAdmin, requireUser, type AppEnv } from "../auth";
 import { cancelBooking, cancelFutureInSeries, createBooking, createSeries } from "../bookings/service";
@@ -8,7 +8,9 @@ import {
   CourtBody,
   createCourt,
   deleteCourt,
+  bookingCalendar,
   getBooking,
+  paymentsSummary,
   getCourt,
   listBookingsByDate,
   listCourts,
@@ -18,6 +20,7 @@ import {
   replaceCourt,
 } from "../admin/service";
 import { readBody } from "../http";
+import { getLoyaltyPct, setLoyaltyPct } from "../settings";
 import { bookingResources, courtResource } from "../resources";
 
 const bad = (path: string, message: string) => new ZodError([{ code: "custom", path: [path], message }]);
@@ -33,6 +36,11 @@ export function adminRoutes(deps: { db: Db; client: MongoClient; secret: string 
     const date = c.req.query("date");
     if (!date || !isRealDate(date)) throw bad("date", "Fecha inválida (YYYY-MM-DD)");
     return c.json(await out(c, await listBookingsByDate(deps.db, date)));
+  });
+
+  r.get("/bookings/calendar", async (c) => {
+    const { from, to } = DateRangeQuery.parse({ from: c.req.query("from"), to: c.req.query("to") });
+    return c.json(await bookingCalendar(deps.db, from, to));
   });
 
   r.post("/bookings", async (c) => {
@@ -78,6 +86,17 @@ export function adminRoutes(deps: { db: Db; client: MongoClient; secret: string 
     const status = c.req.query("status");
     if (status !== "pending" && status !== "paid") throw bad("status", "Debe ser pending o paid");
     return c.json(await out(c, await listPayments(deps.db, status, c.get("now"))));
+  });
+
+  r.get("/payments/summary", async (c) => {
+    const { from, to } = DateRangeQuery.parse({ from: c.req.query("from"), to: c.req.query("to") });
+    return c.json(await paymentsSummary(deps.db, from, to, c.get("now")));
+  });
+
+  r.get("/settings/loyalty", async (c) => c.json({ discountPct: await getLoyaltyPct(deps.db) }));
+  r.put("/settings/loyalty", async (c) => {
+    const { discountPct } = LoyaltyInput.parse(await readBody(c));
+    return c.json({ discountPct: await setLoyaltyPct(deps.db, discountPct) });
   });
 
   r.get("/courts", async (c) => c.json((await listCourts(deps.db)).map(courtResource)));

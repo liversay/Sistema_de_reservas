@@ -193,7 +193,8 @@ describe("admin canchas", () => {
     const av = await t.call("GET", "/api/availability?date=2026-11-25");
     expect(av.json.some((c: any) => c.courtId === "basquet-1")).toBe(false);
     const stored = await t.db.collection("bookings").findOne({ _id: mine.json.id as never });
-    expect((stored as any).price).toBe(30);
+    expect((stored as any).price).toBe(27); // 30 con 10 % de socio (CR-02)
+    expect((stored as any).basePrice).toBe(30);
     expect((await t.call("PUT", "/api/admin/courts/basquet-1", { cookie: admin, body: { ...rest, id: "otro" } })).status).toBe(400);
     expect((await t.call("PUT", "/api/admin/courts/basquet-1", { cookie: admin, body: { ...rest, id: "basquet-1" } })).status).toBe(200);
     expect((await t.call("PUT", "/api/admin/courts/nada", { cookie: admin, body: rest })).status).toBe(404);
