@@ -1,0 +1,43 @@
+# Modelo de datos
+
+Base de datos MongoDB (replica set `rs0`, puerto 27027). Bloque = índice de 30 min desde 00:00
+(`"20:00"` → 40). Fechas `YYYY-MM-DD`.
+
+## Colecciones
+
+### `spaces`
+`{ _id: "futbol-media-a" | "futbol-media-b" | "padel-1" | "basquet-1" | …, name }`
+
+### `courts`
+`{ _id, name, sport: "futbol"|"padel"|"basquet", format?: "5vs5"|"7vs7", spaceIds: string[] (≥1), active: boolean, prices: { "60": n, "90": n, "120": n }, schedule: [{ weekday: 0..6 (0 = lunes), open: "HH:MM", close: "HH:MM", closed: boolean }] }`
+
+Sembrado: Media A (`[futbol-media-a]`), Media B (`[futbol-media-b]`), Completa (ambas),
+Pádel 1, Básquet 1; precios y horario por defecto según `business-rules.md`.
+
+### `bookings`
+`{ _id, courtId, userId? | guest: { name, phone }, createdBy: "client"|"admin", date, startSlot, durationMin: 60|90|120, spaceIds: string[], price, status: "confirmada"|"cancelada"|"no_show", payment: { status: "pendiente"|"pagado", amount?, method?: "efectivo"|"transferencia"|"tarjeta", paidAt?, paidBy? }, createdAt }`
+
+- `spaceIds` y `price` se copian de la cancha al crear (RN-10).
+- "Jugada" no se guarda: se deriva con `hasEnded(date, startSlot, durationMin, now)`.
+- No existen campos de series en este ciclo (decisión de proceso del diseño).
+
+### `slot_locks`
+`{ spaceId, date, slot, bookingId }` con **índice único `(spaceId, date, slot)`** (RN-01, RN-02).
+
+### `users`
+`{ _id, name, email (único), phone, passwordHash, role: "client"|"admin" }`
+
+## Operaciones transaccionales
+
+- **Crear reserva:** en una transacción inserta la reserva y un `slot_lock` por cada bloque × espacio.
+  Un `E11000` aborta la transacción y se traduce en `409`.
+- **Cancelar:** en una transacción marca `cancelada` y borra sus `slot_locks`.
+- **No se presentó:** marca `no_show`; conserva los locks (el turno ya pasó).
+
+## Índices
+
+| Colección | Índice | Motivo |
+|---|---|---|
+| `slot_locks` | único `(spaceId, date, slot)` | RN-01, RN-02 |
+| `users` | único `email` | CA-08 |
+| `bookings` | `(date)`, `(userId, date)` | Reservas del día y Mis reservas |
