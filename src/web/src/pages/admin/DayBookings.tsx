@@ -9,7 +9,7 @@ import { durationLabel, isoDate, longDate, money } from "../../dates";
 
 type Load = { status: "loading" } | { status: "error"; message: string } | { status: "ok"; bookings: AdminBooking[] };
 type Aside = { kind: "new" } | { kind: "pay"; id: string } | null;
-type Asking = { id: string; action: "cancel" | "noshow" } | null;
+type Asking = { id: string; action: "cancel" | "noshow" | "series" } | null;
 
 export function statusBadge(b: AdminBooking): { label: string; cls: string } {
   if (b.status === "cancelada") return { label: "Cancelada", cls: "badge-muted" };
@@ -88,17 +88,26 @@ export function DayBookings() {
     setAside({ kind: "new" });
   }
 
-  async function run(b: AdminBooking, action: "cancel" | "noshow") {
+  async function run(b: AdminBooking, action: "cancel" | "noshow" | "series") {
     setBusy(b.id);
     setNotice(null);
     try {
-      if (action === "cancel") await api.admin.cancel(b.id);
-      else await api.admin.noShow(b.id);
+      let message: string;
+      if (action === "series") {
+        const { cancelled } = await api.admin.cancelFuture(b.seriesId!);
+        message =
+          cancelled === 0
+            ? "No quedaban reservas por cancelar en esa serie."
+            : `Cancelaste ${cancelled} ${cancelled === 1 ? "reserva" : "reservas"} de la serie. Los horarios quedaron libres.`;
+      } else if (action === "cancel") {
+        await api.admin.cancel(b.id);
+        message = "Reserva cancelada. El horario quedó libre.";
+      } else {
+        await api.admin.noShow(b.id);
+        message = "Marcada como no se presentó. Conserva el horario y no se cobra.";
+      }
       setAsking(null);
-      setNotice({
-        kind: "ok",
-        message: action === "cancel" ? "Reserva cancelada. El horario quedó libre." : "Marcada como no se presentó. Conserva el horario y no se cobra.",
-      });
+      setNotice({ kind: "ok", message });
     } catch (e) {
       setAsking(null);
       setNotice({ kind: "error", message: e instanceof ApiError ? e.message : "No pudimos completar la acción." });
@@ -183,6 +192,7 @@ export function DayBookings() {
                       const confirmed = b.status === "confirmada";
                       const pending = b.payment.status === "pendiente";
                       const isAsking = asking?.id === b.id;
+                      const notStarted = confirmed && new Date(`${b.date}T${b.startTime}:00`) > new Date();
                       return (
                         <tr key={b.id} className={aside?.kind === "pay" && aside.id === b.id ? "is-active" : undefined}>
                           <td className="num nowrap" data-label="Hora">
@@ -200,6 +210,12 @@ export function DayBookings() {
                           </td>
                           <td data-label="Estado">
                             <span className={`badge ${st.cls}`}>{st.label}</span>
+                            {b.seriesId && (
+                              <>
+                                {" "}
+                                <span className="badge badge-info">Serie</span>
+                              </>
+                            )}
                           </td>
                           <td data-label="Pago">
                             <PayCell b={b} />
@@ -207,14 +223,14 @@ export function DayBookings() {
                           <td className="cell-actions">
                             {isAsking ? (
                               <div className="confirm-row" role="group" aria-label="Confirmar acción">
-                                <span>{asking.action === "cancel" ? (b.payment.status === "pagado" ? `Esta reserva ya está pagada (${money(b.payment.amount ?? b.price)}). ¿Cancelar igualmente?` : "¿Cancelar esta reserva?") : "¿Marcar como no se presentó?"}</span>
+                                <span>{asking.action === "series" ? "¿Cancelar las próximas reservas de esta serie?" : asking.action === "cancel" ? (b.payment.status === "pagado" ? `Esta reserva ya está pagada (${money(b.payment.amount ?? b.price)}). ¿Cancelar igualmente?` : "¿Cancelar esta reserva?") : "¿Marcar como no se presentó?"}</span>
                                 <button
                                   type="button"
                                   className="btn btn-danger btn-small"
                                   disabled={busy === b.id}
                                   onClick={() => run(b, asking.action)}
                                 >
-                                  {asking.action === "cancel" ? "Sí, cancelar" : "Sí, no se presentó"}
+                                  {asking.action === "noshow" ? "Sí, no se presentó" : "Sí, cancelar"}
                                 </button>
                                 <button type="button" className="btn btn-secondary btn-small" onClick={() => setAsking(null)}>
                                   Volver
@@ -250,6 +266,16 @@ export function DayBookings() {
                                     onClick={() => setAsking({ id: b.id, action: "cancel" })}
                                   >
                                     Cancelar
+                                  </button>
+                                )}
+                                {notStarted && b.seriesId && (
+                                  <button
+                                    type="button"
+                                    className="btn btn-secondary btn-small"
+                                    aria-label={`Cancelar las próximas de la serie ${b.courtName} ${b.startTime}`}
+                                    onClick={() => setAsking({ id: b.id, action: "series" })}
+                                  >
+                                    Cancelar las próximas de la serie
                                   </button>
                                 )}
                               </div>
