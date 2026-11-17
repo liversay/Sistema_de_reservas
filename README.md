@@ -5,8 +5,7 @@ con backoffice para el administrador.
 
 ## Problema y outcome
 
-El complejo coordina las reservas por WhatsApp y hay cruces de horario. El cliente debe poder ver qué
-está libre y reservar en menos de un minuto; el administrador debe tener cero reservas
+El cliente debe poder ver qué está libre y reservar en menos de un minuto; el administrador debe tener cero reservas
 superpuestas y saber qué falta por cobrar. Ver [`specs/outcomes.md`](specs/outcomes.md).
 
 ## Documentación
