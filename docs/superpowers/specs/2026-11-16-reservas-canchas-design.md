@@ -1,6 +1,6 @@
 # Sistema de Reservas de Canchas — Documento de diseño
 
-Fecha: 2026-11-16 · Estado: borrador para aprobación
+Fecha: 2026-11-16 · Estado: aprobado (2026-11-16)
 Repositorio: `git@github.com:liversay/Sistema_de_reservas.git`
 
 ## 1. Intención y por qué
