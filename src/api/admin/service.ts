@@ -77,7 +77,10 @@ export async function listPayments(db: Db, status: "pending" | "paid", now: Date
 const hhmm = (s: string) => s;
 export const CourtBody = CourtInput.extend({
   id: z.string().regex(/^[a-z0-9-]+$/, "Solo minúsculas, números y guiones").optional(),
-  spaceIds: z.array(z.string().min(1)).min(1),
+  spaceIds: z
+    .array(z.string().min(1))
+    .min(1)
+    .refine((a) => new Set(a).size === a.length, "Espacio repetido"),
   prices: z.object({
     "60": z.number().positive(),
     "90": z.number().positive(),

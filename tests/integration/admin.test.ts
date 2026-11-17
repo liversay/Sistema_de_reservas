@@ -173,6 +173,14 @@ describe("admin canchas", () => {
     expect((await t.call("POST", "/api/admin/courts", { cookie: admin, body: closed })).status).toBe(201);
   });
 
+  test("400 si spaceIds se repite o el horario no cae en :00/:30", async () => {
+    const dupSpaces = await t.call("POST", "/api/admin/courts", { cookie: admin, body: court({ id: "dup-s", spaceIds: ["padel-2", "padel-2"] }) });
+    expect(dupSpaces.status).toBe(400);
+    const odd = court({ id: "odd-m" }) as any;
+    odd.schedule[0].open = "10:15";
+    expect((await t.call("POST", "/api/admin/courts", { cookie: admin, body: odd })).status).toBe(400);
+  });
+
   test("PUT: active:false la quita de availability; id inmutable; 404; RN-10", async () => {
     const mine = await t.call("POST", "/api/bookings", { cookie: client, body: { courtId: "basquet-1", date: "2026-11-25", startTime: "18:00", durationMin: 60 } });
     expect(mine.status).toBe(201);

@@ -46,7 +46,7 @@ export function Payments() {
   );
   const pendingTotal = pending.reduce((s, b) => s + b.price, 0);
   const paidDay = useMemo(
-    () => (lists?.paid ?? []).filter((b) => b.date === day && b.status === "confirmada").sort((a, b) => a.startTime.localeCompare(b.startTime)),
+    () => (lists?.paid ?? []).filter((b) => b.date === day && b.payment.status === "pagado").sort((a, b) => a.startTime.localeCompare(b.startTime)),
     [lists, day],
   );
   const paidTotal = paidDay.reduce((s, b) => s + (b.payment.amount ?? 0), 0);
@@ -206,7 +206,15 @@ export function Payments() {
                         <tr key={b.id}>
                           <td className="num nowrap">{b.startTime}</td>
                           <td>{b.courtName}</td>
-                          <td>{c.name}</td>
+                          <td>
+                            {c.name}
+                            {b.status === "cancelada" && (
+                              <>
+                                {" "}
+                                <span className="badge badge-muted">Cancelada</span>
+                              </>
+                            )}
+                          </td>
                           <td className="cap">{b.payment.method}</td>
                           <td className="num right">
                             <strong>{money(b.payment.amount ?? 0)}</strong>

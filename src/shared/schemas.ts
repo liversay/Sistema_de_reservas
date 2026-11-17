@@ -47,8 +47,8 @@ export const PaymentInput = z.object({
 
 const ScheduleDaySchema = z.object({
   weekday: z.number().int().min(0).max(6),
-  open: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
-  close: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  open: z.string().regex(/^([01]\d|2[0-3]):(00|30)$/),
+  close: z.string().regex(/^([01]\d|2[0-3]):(00|30)$/),
   closed: z.boolean(),
 });
 

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { api, ApiError, CONFLICT_MESSAGE, type AdminBooking, type AdminCourt } from "../../api";
 import { fromSlot, priceFor, toSlot, type Duration } from "../../shared";
-import { money, weekdayIndex } from "../../dates";
+import { isoDate, money, weekdayIndex } from "../../dates";
 import { DurationPicker } from "../DurationPicker";
 import { AlertIcon } from "../Icons";
 import { RepeatOption } from "../RepeatOption";
@@ -11,7 +11,10 @@ function startOptions(court: AdminCourt | undefined, date: string, duration: Dur
   const day = court?.schedule.find((d) => d.weekday === weekdayIndex(date));
   if (!day || day.closed) return [];
   const out: string[] = [];
-  for (let s = toSlot(day.open); s + duration / 30 <= toSlot(day.close); s++) out.push(fromSlot(s));
+  const now = new Date();
+  // Si la fecha es hoy, no se ofrecen horas que ya empezaron.
+  const minSlot = date === isoDate(now) ? Math.floor((now.getHours() * 60 + now.getMinutes()) / 30) + 1 : 0;
+  for (let s = Math.max(toSlot(day.open), minSlot); s + duration / 30 <= toSlot(day.close); s++) out.push(fromSlot(s));
   return out;
 }
 

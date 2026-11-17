@@ -144,6 +144,8 @@ export const api = {
       request<AdminBooking>(`/admin/bookings/${encodeURIComponent(id)}/payment`, { method: "POST", body: input }),
     noShow: (id: string) => request<AdminBooking>(`/admin/bookings/${encodeURIComponent(id)}/no-show`, { method: "POST" }),
     cancel: (id: string) => request<AdminBooking>(`/admin/bookings/${encodeURIComponent(id)}/cancel`, { method: "POST" }),
+    cancelFuture: (seriesId: string) =>
+      request<{ cancelled: number }>(`/admin/bookings/series/${encodeURIComponent(seriesId)}/cancel-future`, { method: "POST" }),
     payments: (status: "pending" | "paid", signal?: AbortSignal) =>
       request<AdminBooking[]>(`/admin/payments?status=${status}`, { signal }),
     courts: () => request<AdminCourt[]>("/admin/courts"),

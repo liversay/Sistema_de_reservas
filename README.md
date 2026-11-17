@@ -79,6 +79,11 @@ Los roles rotan por ciclo (detalle en [`specs/implementation-plan.md`](specs/imp
 | 2 | Reserva del cliente, cuentas, Mis reservas, backoffice | aaronbatistaa | Diegoalevq | liversay |
 | 3 | Cambio de requerimiento (reservas recurrentes, CR-01), pagos, README, cierre | Diegoalevq | liversay | aaronbatistaa |
 
+## Limitaciones conocidas
+
+- El cierre de sesión no revoca una cookie de sesión copiada: sigue siendo válida hasta 7 días (ADR-004).
+- La API no limita hasta qué fecha se puede reservar; la interfaz solo muestra 7 días.
+
 ## Estado
 
 Ciclos 1 a 3 completados y verificados localmente: 90 pruebas `bun test` y 20 e2e en verde, incluidas las reservas recurrentes (CR-01, CA-15…CA-18). Pendiente: publicar las ramas, abrir los PR y verificar el CI en `main`. Historial en [`CHANGELOG.md`](CHANGELOG.md).
