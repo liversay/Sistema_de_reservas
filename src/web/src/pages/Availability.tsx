@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { DURATIONS, fromSlot, toSlot, type Duration, type Sport } from "../shared";
 import { api, ApiError, CONFLICT_MESSAGE, type Booking, type CourtAvailability } from "../api";
@@ -55,18 +55,46 @@ export function Availability() {
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState<{ kind: "ok"; booking: Booking } | { kind: "error"; message: string } | null>(null);
 
-  const refresh = useCallback(async () => {
-    try {
-      const courts = await api.availability(date);
-      setLoad({ status: "ok", courts });
-    } catch (e) {
-      setLoad({ status: "error", message: e instanceof ApiError ? e.message : "No pudimos cargar la disponibilidad." });
-    }
-  }, [date]);
+  const [refreshWarning, setRefreshWarning] = useState<string | null>(null);
+  // Solo la última petición puede escribir en la cuadrícula: al cambiar de día rápido, una
+  // respuesta lenta de otro día se cancela (AbortController) y, si igual llega, se descarta.
+  const latest = useRef<{ id: number; date: string; ctrl: AbortController } | null>(null);
+  const seq = useRef(0);
+
+  /**
+   * `background`: refresco tras reservar o tras un 409. Si falla, se conserva la cuadrícula
+   * anterior y se muestra un aviso no bloqueante; solo la carga inicial del día usa el estado de error.
+   */
+  const refresh = useCallback(
+    async ({ background = false }: { background?: boolean } = {}) => {
+      latest.current?.ctrl.abort();
+      const req = { id: ++seq.current, date, ctrl: new AbortController() };
+      latest.current = req;
+      const isCurrent = () => latest.current?.id === req.id;
+      try {
+        const courts = await api.availability(date, req.ctrl.signal);
+        if (!isCurrent()) return;
+        setRefreshWarning(null);
+        setLoad({ status: "ok", courts });
+      } catch (e) {
+        if (!isCurrent() || req.ctrl.signal.aborted) return;
+        const message = e instanceof ApiError ? e.message : "No pudimos cargar la disponibilidad.";
+        if (background) {
+          setLoad((prev) => (prev.status === "ok" ? prev : { status: "error", message }));
+          setRefreshWarning("No pudimos actualizar la disponibilidad; lo que ves puede no estar al día.");
+        } else {
+          setLoad({ status: "error", message });
+        }
+      }
+    },
+    [date],
+  );
 
   useEffect(() => {
     setLoad({ status: "loading" });
+    setRefreshWarning(null);
     void refresh();
+    return () => latest.current?.ctrl.abort();
   }, [refresh]);
 
   const allCourts = load.status === "ok" ? load.courts : [];
@@ -101,7 +129,7 @@ export function Availability() {
       if (e instanceof ApiError && e.status === 409) update({ cancha: null, hora: null });
     } finally {
       setSubmitting(false);
-      void refresh();
+      void refresh({ background: true });
     }
   }
 
@@ -161,6 +189,15 @@ export function Availability() {
               <div>{notice.message}</div>
               <button type="button" className="notice-close" aria-label="Cerrar aviso" onClick={() => setNotice(null)}>
                 ×
+              </button>
+            </div>
+          )}
+          {refreshWarning && (
+            <div className="notice notice-warn" role="status">
+              <AlertIcon />
+              <div>{refreshWarning}</div>
+              <button type="button" className="btn btn-secondary btn-small" onClick={() => void refresh({ background: true })}>
+                Actualizar
               </button>
             </div>
           )}

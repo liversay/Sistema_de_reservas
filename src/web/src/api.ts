@@ -47,7 +47,7 @@ export class ApiError extends Error {
 
 export const CONFLICT_MESSAGE = "Ese horario ya fue tomado. Elige otro.";
 
-async function request<T>(path: string, init?: { method?: string; body?: unknown }): Promise<T> {
+async function request<T>(path: string, init?: { method?: string; body?: unknown; signal?: AbortSignal }): Promise<T> {
   let res: Response;
   try {
     res = await fetch(`/api${path}`, {
@@ -55,8 +55,11 @@ async function request<T>(path: string, init?: { method?: string; body?: unknown
       credentials: "include",
       headers: init?.body !== undefined ? { "Content-Type": "application/json" } : undefined,
       body: init?.body !== undefined ? JSON.stringify(init.body) : undefined,
+      signal: init?.signal,
     });
-  } catch {
+  } catch (e) {
+    // Una petición cancelada a propósito no es un error de conexión: se propaga tal cual.
+    if (init?.signal?.aborted) throw e;
     throw new ApiError(0, "No pudimos conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.");
   }
   if (res.status === 204) return undefined as T;
@@ -69,7 +72,8 @@ async function request<T>(path: string, init?: { method?: string; body?: unknown
 }
 
 export const api = {
-  availability: (date: string) => request<CourtAvailability[]>(`/availability?date=${encodeURIComponent(date)}`),
+  availability: (date: string, signal?: AbortSignal) =>
+    request<CourtAvailability[]>(`/availability?date=${encodeURIComponent(date)}`, { signal }),
   me: () => request<User>("/auth/me"),
   login: (email: string, password: string) =>
     request<User>("/auth/login", { method: "POST", body: { email, password } }),

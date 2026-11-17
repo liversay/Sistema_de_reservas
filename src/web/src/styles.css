@@ -391,6 +391,21 @@ button:disabled {
   color: #8a1c14;
   font-weight: 600;
 }
+.notice-warn {
+  background: #fff4d1;
+  border-color: #f0d27a;
+  color: #7a4b00;
+  font-weight: 600;
+  align-items: center;
+}
+.notice + .notice {
+  margin-top: 8px;
+}
+.btn-small {
+  min-height: 44px;
+  padding: 0 16px;
+  font-size: 14px;
+}
 .notice-close {
   flex: 0 0 auto;
   width: 36px;

@@ -28,7 +28,7 @@ function statusOf(b: Booking, now: Date): { label: string; tone: "ok" | "muted" 
 }
 
 export function MyBookings() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, setUser } = useAuth();
   const [bookings, setBookings] = useState<Booking[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [asking, setAsking] = useState<string | null>(null);
@@ -39,9 +39,14 @@ export function MyBookings() {
     try {
       setBookings(await api.myBookings());
     } catch (e) {
+      // Sesión caducada o servidor reiniciado: se vuelve al aviso "Ingresa para ver tus reservas".
+      if (e instanceof ApiError && e.status === 401) {
+        setUser(null);
+        return;
+      }
       setError(e instanceof ApiError ? e.message : "No pudimos cargar tus reservas.");
     }
-  }, []);
+  }, [setUser]);
 
   useEffect(() => {
     if (user) void load();
