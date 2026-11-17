@@ -95,21 +95,21 @@ describe("CR-01 todo-o-nada (CA-16, RN-12)", () => {
     const out = await t.call("POST", "/api/bookings/series", { cookie: ana, body: series({ startTime: "22:30", durationMin: 120 }) });
     expect(out.status).toBe(422);
     expect(out.json.error).toContain("2026-11-26");
-    await t.db.collection("courts").updateOne({ _id: "padel-1" }, { $set: { active: false } });
+    await t.db.collection<any>("courts").updateOne({ _id: "padel-1" }, { $set: { active: false } });
     const inactive = await t.call("POST", "/api/bookings/series", { cookie: ana, body: series({ courtId: "padel-1" }) });
     expect(inactive.status).toBe(422);
-    await t.db.collection("courts").updateOne({ _id: "padel-1" }, { $set: { active: true } });
+    await t.db.collection<any>("courts").updateOne({ _id: "padel-1" }, { $set: { active: true } });
   });
 
   test("422 por fecha posterior fuera de horario (cancha cerrada un día de la serie)", async () => {
     const court = await t.db.collection<any>("courts").findOne({ _id: "basquet-1" });
     const sched = court.schedule.map((d: any) => (d.weekday === 3 ? { ...d, closed: true } : d)); // jueves
     // Jueves cerrado: 2026-11-26 (1.ª ocurrencia) cae en jueves.
-    await t.db.collection("courts").updateOne({ _id: "basquet-1" }, { $set: { schedule: sched } });
+    await t.db.collection<any>("courts").updateOne({ _id: "basquet-1" }, { $set: { schedule: sched } });
     const r = await t.call("POST", "/api/bookings/series", { cookie: ana, body: series({ courtId: "basquet-1" }) });
     expect(r.status).toBe(422);
     expect(r.json.error).toContain("2026-11-26");
-    await t.db.collection("courts").updateOne({ _id: "basquet-1" }, { $set: { schedule: court.schedule } });
+    await t.db.collection<any>("courts").updateOne({ _id: "basquet-1" }, { $set: { schedule: court.schedule } });
   });
 });
 
