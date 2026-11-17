@@ -474,7 +474,15 @@ test("CA-23 tablero de Reservas: filas por cancha, barras por estado, puntos en 
   await expect(dialog.getByRole("button", { name: "No se presentó" })).toBeVisible();
   await expect(dialog.getByRole("button", { name: "Cancelar", exact: true })).toBeVisible();
   await expect(dialog.getByRole("button", { name: "Cancelar las próximas de la serie" })).toHaveCount(0);
-  // Esc cierra y devuelve el foco a la barra (el cursor se aparta: encima de la barra la vista previa por cursor es legítima).
+  // Esc con el cursor encima de la barra: cierra y la vista previa no reaparece hasta que el cursor salga.
+  await playedBar.hover();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.waitForTimeout(400);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await playedBar.click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  // Esc cierra y devuelve el foco a la barra.
   await page.mouse.move(0, 0);
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);

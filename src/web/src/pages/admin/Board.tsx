@@ -157,6 +157,8 @@ export function Board() {
   const overCard = useRef(false);
   const lastBar = useRef<string | null>(null);
   const suppressFocusPreview = useRef(false);
+  // Tras cerrar con Esc el cursor puede seguir sobre la barra: no reabrir la vista previa hasta que salga.
+  const suppressPointerPreview = useRef(false);
   const clearTimer = () => {
     if (hoverTimer.current) window.clearTimeout(hoverTimer.current);
     hoverTimer.current = null;
@@ -168,6 +170,7 @@ export function Board() {
   }, []);
   const previewEnd = useCallback(() => {
     clearTimer();
+    suppressPointerPreview.current = false;
     hoverTimer.current = window.setTimeout(() => {
       if (overCard.current) return;
       setCard((c) => (c && !c.pinned ? null : c));
@@ -176,12 +179,14 @@ export function Board() {
   const pin = useCallback((b: AdminBooking, el: HTMLElement) => {
     clearTimer();
     lastBar.current = b.id;
+    suppressPointerPreview.current = false;
     setCard({ id: b.id, anchor: el, pinned: true });
   }, []);
 
   const closeCard = useCallback((returnFocus: boolean) => {
     clearTimer();
     overCard.current = false;
+    if (returnFocus) suppressPointerPreview.current = true;
     setCard(null);
     if (returnFocus && lastBar.current) {
       const id = lastBar.current;
@@ -414,8 +419,9 @@ export function Board() {
                     openId={card?.id ?? null}
                     onFree={(courtId, time) => openNew(courtId, time)}
                     events={{
-                      onPreview: (b, el) => {
+                      onPreview: (b, el, viaPointer) => {
                         if (suppressFocusPreview.current) return;
+                        if (viaPointer && suppressPointerPreview.current) return;
                         preview(b, el);
                       },
                       onPreviewEnd: previewEnd,
