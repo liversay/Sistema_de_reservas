@@ -8,6 +8,7 @@ import { bookingTone, clientOf, METHOD_LABEL, METHOD_ORDER, PAY_LABEL, PHASE_LAB
 export type CardAction = "pay" | "noshow" | "cancel" | "series";
 
 const CARD_W = 344;
+const FOCUSABLE = 'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
 /** Posición fija junto a la barra: debajo si cabe, si no arriba; siempre dentro de la ventana. */
 function place(anchor: DOMRect, h: number): { left: number; top: number } {
@@ -139,12 +140,31 @@ export function BookingCard({
             e.stopPropagation();
             if (mode !== "view" && !busy) setMode("view");
             else onClose(true);
+            return;
+          }
+          // Hoja inferior modal (móvil): el foco no sale de la tarjeta con Tab / Mayús+Tab.
+          if (e.key === "Tab" && sheet && pinned && box.current) {
+            const items = [...box.current.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((el) => !el.hasAttribute("disabled"));
+            if (items.length === 0) {
+              e.preventDefault();
+              return;
+            }
+            const first = items[0]!;
+            const last = items[items.length - 1]!;
+            const active = document.activeElement;
+            if (e.shiftKey && (active === first || active === box.current)) {
+              e.preventDefault();
+              last.focus();
+            } else if (!e.shiftKey && active === last) {
+              e.preventDefault();
+              first.focus();
+            }
           }
         }}
       >
         <div className={`bcard-band tone-${tone}`}>
           <span className="bcard-status">{tone === "live" ? "Confirmada" : TONE_LABEL[tone]}</span>
-          {b.status === "confirmada" && <span className="bcard-phase">{PHASE_LABEL[phase]}</span>}
+          {b.status !== "cancelada" && <span className="bcard-phase">{PHASE_LABEL[phase]}</span>}
           {b.seriesId && <span className="bcard-chip">↻ Serie semanal</span>}
           <button type="button" className="bcard-x" aria-label="Cerrar tarjeta" onClick={() => onClose(true)}>
             ×

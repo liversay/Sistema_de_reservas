@@ -11,7 +11,10 @@ import { bookingTone, clientOf, METHOD_LABEL, payTone, type Vista } from "../../
 import { addDays, diffDays, HORIZON_DAYS, isoDate, money } from "../../dates";
 import { formatLongDate, formatRange12, formatTime12 } from "../../format";
 
-type Load = { status: "loading" } | { status: "error"; message: string } | { status: "ok"; date: string; bookings: AdminBooking[] };
+type Load =
+  | { status: "loading" }
+  | { status: "error"; date: string; message: string }
+  | { status: "ok"; date: string; bookings: AdminBooking[] };
 type Card = { id: string; anchor: HTMLElement | null; pinned: boolean };
 type Notice = { kind: "ok" | "error"; message: string } | null;
 
@@ -90,14 +93,21 @@ export function Board() {
     if (d < 0 || d >= STRIP_DAYS) setStripStart(addDays(date, -STRIP_BACK));
   }, [date, stripStart]);
 
-  useEffect(() => {
+  const courtsCtrl = useRef<AbortController | null>(null);
+  const loadCourts = useCallback(() => {
+    courtsCtrl.current?.abort();
     const ctrl = new AbortController();
+    courtsCtrl.current = ctrl;
+    setCourtsError(null);
     api.admin
       .courts(ctrl.signal)
-      .then(setCourts)
-      .catch((e) => !ctrl.signal.aborted && setCourtsError(e instanceof ApiError ? e.message : "No pudimos cargar las canchas."));
-    return () => ctrl.abort();
+      .then((list) => courtsCtrl.current === ctrl && setCourts(list))
+      .catch((e) => courtsCtrl.current === ctrl && !ctrl.signal.aborted && setCourtsError(e instanceof ApiError ? e.message : "No pudimos cargar las canchas."));
   }, []);
+  useEffect(() => {
+    loadCourts();
+    return () => courtsCtrl.current?.abort();
+  }, [loadCourts]);
 
   // Solo la última petición, y solo para el día que se está viendo, escribe en el tablero.
   const dateRef = useRef(date);
@@ -116,7 +126,7 @@ export function Board() {
       if (latest.current !== ctrl || ctrl.signal.aborted || dateRef.current !== day) return;
       const message = e instanceof ApiError ? e.message : "No pudimos cargar las reservas.";
       if (background) setNotice({ kind: "error", message });
-      else setLoad({ status: "error", message });
+      else setLoad({ status: "error", date: day, message });
     }
   }, []);
 
@@ -135,7 +145,9 @@ export function Board() {
     return () => ctrl.abort();
   }, [stripStart, stripEnd, refreshKey]);
 
-  const bookings = load.status === "ok" ? load.bookings : [];
+  // Lo cargado solo vale para el día que se está viendo: al cambiar de día nunca se pintan reservas de otro.
+  const view: Load = load.status !== "loading" && load.date !== date ? { status: "loading" } : load;
+  const bookings = view.status === "ok" ? view.bookings : [];
   const live = bookings.filter((b) => b.status !== "cancelada");
   const cancelled = bookings.filter((b) => b.status === "cancelada").sort((a, b) => a.startTime.localeCompare(b.startTime));
 
@@ -203,7 +215,7 @@ export function Board() {
   // Ir a una reserva desde «Por cobrar»: abre su tarjeta cuando el tablero de ese día está listo.
   const goTo = useRef<string | null>(null);
   useEffect(() => {
-    if (load.status !== "ok" || !goTo.current) return;
+    if (view.status !== "ok" || !goTo.current) return;
     const id = goTo.current;
     goTo.current = null;
     requestAnimationFrame(() => {
@@ -213,7 +225,7 @@ export function Board() {
       lastBar.current = id;
       setCard({ id, anchor: el, pinned: true });
     });
-  }, [load]);
+  }, [view]);
 
   const cardBooking = card ? bookings.find((b) => b.id === card.id) : undefined;
 
@@ -345,7 +357,7 @@ export function Board() {
                     {vista === "pagos" ? "Cobros del día" : "Reservas del día"}
                   </h2>
                   <p className="board-sub">
-                    {load.status === "ok" ? (
+                    {view.status === "ok" ? (
                       vista === "pagos" ? (
                         <>
                           {live.length} {live.length === 1 ? "reserva" : "reservas"} · cobrado en las reservas de este día{" "}
@@ -368,22 +380,29 @@ export function Board() {
                 </button>
               </div>
 
-              {(load.status === "loading" || (!courts && !courtsError)) && (
+              {(view.status === "loading" || (!courts && !courtsError)) && (
                 <div className="state-box" aria-busy="true">
                   <div className="skeleton" />
                   <div className="skeleton" />
                 </div>
               )}
-              {(load.status === "error" || courtsError) && (
+              {(view.status === "error" || courtsError) && (
                 <div className="state-box empty" role="alert">
                   <span className="empty-title">No pudimos cargar el tablero</span>
-                  <p>{courtsError ?? (load.status === "error" ? load.message : "")}</p>
-                  <button type="button" className="btn btn-primary" onClick={() => void refresh()}>
+                  <p>{courtsError ?? (view.status === "error" ? view.message : "")}</p>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => {
+                      if (courtsError || !courts) loadCourts();
+                      void refresh();
+                    }}
+                  >
                     Reintentar
                   </button>
                 </div>
               )}
-              {load.status === "ok" && courts && (
+              {view.status === "ok" && courts && (
                 <>
                   <BookingBoard
                     courts={courts}
@@ -410,7 +429,7 @@ export function Board() {
                 </>
               )}
 
-              {load.status === "ok" && cancelled.length > 0 && (
+              {view.status === "ok" && cancelled.length > 0 && (
                 <div className="cancelled">
                   <h3 className="cancelled-title">
                     Canceladas este día <span className="dash-count num">{cancelled.length}</span>

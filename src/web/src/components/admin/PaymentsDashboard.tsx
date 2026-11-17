@@ -37,7 +37,7 @@ function rangeLabel(from: string, to: string, rango: Rango): string {
 const pct = (part: number, total: number) => (total > 0 ? Math.round((part / total) * 1000) / 10 : 0);
 const fmtPct = (n: number) => `${Number.isInteger(n) ? n : n.toFixed(1)} %`;
 
-type Load = { status: "loading" } | { status: "error"; message: string } | { status: "ok"; summary: PaymentsSummary; pending: AdminBooking[] };
+type Load = { status: "loading" } | { status: "error"; message: string } | { status: "ok"; from: string; to: string; summary: PaymentsSummary; pending: AdminBooking[] };
 
 /**
  * Pestaña Pagos (CR-02 / CA-24): indicadores del rango (día / semana / mes) desde
@@ -65,11 +65,11 @@ export function PaymentsDashboard({
     latest.current?.abort();
     const ctrl = new AbortController();
     latest.current = ctrl;
-    setLoad((l) => (l.status === "ok" ? l : { status: "loading" }));
+    setLoad({ status: "loading" });
     Promise.all([api.admin.summary(from, to, ctrl.signal), api.admin.payments("pending", ctrl.signal)])
       .then(([summary, pending]) => {
         if (latest.current !== ctrl) return;
-        setLoad({ status: "ok", summary, pending: pending.filter((b) => b.date >= from && b.date <= to) });
+        setLoad({ status: "ok", from, to, summary, pending: pending.filter((b) => b.date >= from && b.date <= to) });
       })
       .catch((e) => {
         if (ctrl.signal.aborted || latest.current !== ctrl) return;
@@ -79,6 +79,8 @@ export function PaymentsDashboard({
   }, [from, to, refreshKey]);
 
   const label = rangeLabel(from, to, rango);
+  // Solo se muestran cifras del rango que se está viendo; mientras llega el nuevo, esqueleto.
+  const ok = load.status === "ok" && load.from === from && load.to === to ? load : null;
 
   return (
     <section className="paydash" aria-labelledby={`${id}-t`}>
@@ -98,7 +100,7 @@ export function PaymentsDashboard({
         </div>
       </div>
 
-      {load.status === "loading" && (
+      {!ok && load.status !== "error" && (
         <div className="state-box" aria-busy="true">
           <div className="skeleton" />
         </div>
@@ -109,32 +111,20 @@ export function PaymentsDashboard({
           <div>{load.message}</div>
         </div>
       )}
-      {load.status === "ok" && <Dashboard s={load.summary} pending={load.pending} from={from} to={to} rango={rango} date={date} onGo={onGo} />}
+      {ok && <Ledger s={ok.summary} />}
+      <div className="paydash-grid">
+        {ok && <Cards s={ok.summary} pending={ok.pending} from={from} to={to} rango={rango} date={date} onGo={onGo} />}
+        {/* Fuera de la carga del resumen: no depende del rango ni se reinicia al cambiarlo. */}
+        <LoyaltyCard />
+      </div>
     </section>
   );
 }
 
-function Dashboard({
-  s,
-  pending,
-  from,
-  to,
-  rango,
-  date,
-  onGo,
-}: {
-  s: PaymentsSummary;
-  pending: AdminBooking[];
-  from: string;
-  to: string;
-  rango: Rango;
-  date: string;
-  onGo: (b: AdminBooking) => void;
-}) {
+function Ledger({ s }: { s: PaymentsSummary }) {
   const generated = s.collected + s.pending;
   const rate = pct(s.collected, generated);
   return (
-    <>
       <div className="ledger" data-testid="indicadores">
         <div className="ledger-main">
           <span className="ledger-label">Total cobrado</span>
@@ -194,8 +184,28 @@ function Dashboard({
           </div>
         </dl>
       </div>
+  );
+}
 
-      <div className="paydash-grid">
+function Cards({
+  s,
+  pending,
+  from,
+  to,
+  rango,
+  date,
+  onGo,
+}: {
+  s: PaymentsSummary;
+  pending: AdminBooking[];
+  from: string;
+  to: string;
+  rango: Rango;
+  date: string;
+  onGo: (b: AdminBooking) => void;
+}) {
+  return (
+    <>
         <section className="dash-card" aria-labelledby="metodos-t">
           <h3 className="dash-title" id="metodos-t">
             Por método de pago
@@ -231,8 +241,6 @@ function Dashboard({
           </section>
         )}
         {rango !== "dia" && <DueList pending={pending} onGo={onGo} />}
-        <LoyaltyCard />
-      </div>
     </>
   );
 }
