@@ -23,9 +23,9 @@ Estado: ✔ implementado y verificado localmente (48 pruebas en verde). **Los PR
 | 3 | aaronbatistaa (Dev) | `feat/3-reservas-core` | [#3](https://github.com/liversay/Sistema_de_reservas/issues/3) | Base de datos, disponibilidad, creación de reservas, slot_locks |
 | 4 | Diegoalevq (QA) | `test/4-doble-reserva-ci` | [#4](https://github.com/liversay/Sistema_de_reservas/issues/4) | Suite de doble reserva (CA-05, CA-06) y CI |
 
-## Ciclo 2 (en curso)
+## Ciclo 2 (completado ✔)
 
-Estado: tarea 5 (esta) en curso; tareas 6 a 9 pendientes. La tarea 5 fija los contratos de `specs/api.md` y las pruebas previstas por CA en `specs/acceptance-criteria.md` antes de que Dev implemente.
+Estado: ✔ tareas 5 a 9 implementadas y verificadas localmente (73 pruebas `bun test` y 16 e2e en verde). La tarea 5 fijó los contratos de `specs/api.md` y las pruebas previstas por CA en `specs/acceptance-criteria.md` antes de que Dev implementara.
 
 | Tarea | Responsable (rol) | Rama | Issue | Alcance |
 |---|---|---|---|---|

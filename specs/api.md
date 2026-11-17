@@ -20,7 +20,7 @@ construye con `createApp({ db, client, now?, secret })` donde `now?: () => Date`
 | 422 | Regla de negocio (horario, pasado, pago/no-show antes de terminar, ya empezó) |
 
 Cuerpo de todo error: `{ "error": string }`; en `400` además `fields?: { [campo]: string }` con el
-mensaje de cada campo inválido. Mensaje de choque exacto: `"Ese horario ya fue tomado. Elige otro."`
+mensaje de cada campo inválido. Mensaje de choque exacto: `"Ese horario ya fue tomado. Elige otro."` (CR-01: en series, variante con fecha `"Ese horario ya fue tomado el <YYYY-MM-DD>. Elige otro."`)
 
 ### Recursos
 
@@ -87,7 +87,9 @@ cambios no alteran reservas existentes (RN-10).
 
 ## Notas
 
-- **CR-01:** cada reserva de una serie incluye `seriesId` (UUID); las reservas sueltas no lo tienen. El pago, el no-show y la cancelación individual (`/:id/...`) operan sobre una ocurrencia y no afectan a las demás (RN-13). Para series, el `409` y el `422` llevan el mensaje con la fecha de la primera ocurrencia que falla, en orden de fecha.
+- **CR-01:** cada reserva de una serie incluye `seriesId` (UUID); las reservas sueltas no lo tienen. El pago, el no-show y la cancelación individual (`/:id/...`) operan sobre una ocurrencia y no afectan a las demás (RN-13). Para series, el `409` y el `422` nombran la fecha según el orden indicado abajo.
+- **CR-01, orden de validación de series** (misma convención que el resto de la API): `401`/`403` → `400` → `404` cancha → `422` (se revisan todas las ocurrencias; el error nombra la primera fecha que falla, en orden de fecha) → `409` (primera fecha que choca, en orden de fecha). Si una fecha da `422` y otra `409`, responde `422`.
+- **CR-01, orden de `cancel-future`:** `401`/`403` → `404` serie (no existe o, para el cliente, no es suya) → cancelación.
 - `startTime` cumple `/^([01]\d|2[0-3]):(00|30)$/`; `durationMin` ∈ {60, 90, 120}.
 - Teléfono `/^\+?[0-9 ]{7,15}$/`; contraseña ≥ 8; nombre 2–60; email válido y único.
 - El precio lo calcula el servidor desde la cancha; el cliente nunca lo envía. El pago admite

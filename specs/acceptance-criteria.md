@@ -120,7 +120,7 @@ Un `now` anterior al turno se asume salvo que se indique lo contrario.
 
 - **Dado** un cliente autenticado y "Pádel 1" ya reservada el `2026-12-03` a las 20:00 por otro cliente, y libre las demás fechas
 - **Cuando** intenta crear la serie semanal de 4 jueves a las 20:00 desde el `2026-11-19`
-- **Entonces** responde `409` con el mensaje "Ese horario ya fue tomado el 2026-12-03. Elige otro." y **no se crea ninguna** reserva (el `2026-11-19`, `2026-11-26` y `2026-12-10` siguen libres); lo mismo aplica al choque por cancha divisible (Media A contra Completa, RN-02); si la fecha que falla incumple horario, está en el pasado o la cancha está inactiva, responde `422` nombrando esa fecha y tampoco se crea ninguna; con dos peticiones concurrentes que se solapan en una fecha, a lo sumo una serie queda creada completa.
+- **Entonces** responde `409` con el mensaje "Ese horario ya fue tomado el 2026-12-03. Elige otro." y **no se crea ninguna** reserva (el `2026-11-19`, `2026-11-26` y `2026-12-10` siguen libres); lo mismo aplica al choque por cancha divisible (Media A contra Completa, RN-02); si la fecha que falla incumple horario, está en el pasado o la cancha está inactiva, responde `422` nombrando esa fecha y tampoco se crea ninguna; si una fecha da `422` (p. ej. el `2026-11-26` fuera de horario) y otra `409` (el `2026-12-03` tomada), responde `422` con la fecha `2026-11-26` (las reglas se evalúan antes que los choques) y no se crea ninguna; con dos peticiones concurrentes que se solapan en una fecha, a lo sumo una serie queda creada completa.
 
 ## CA-17 Cancelar las próximas de una serie (CR-01; RF-16; RN-06, RN-13)
 
@@ -130,8 +130,8 @@ Un `now` anterior al turno se asume salvo que se indique lo contrario.
 
 ## CA-18 Admin crea serie para invitado y cada ocurrencia se cobra aparte (CR-01; RF-15; RN-09, RN-07, RN-12, RN-13)
 
-- **Dado** un admin autenticado y "Básquet 1" libre cuatro sábados desde el `2026-11-21` a las 10:00
-- **Cuando** crea una serie de 3 semanas con `guest = { name, phone }` y luego, con un `now` posterior al fin de la 1.ª ocurrencia, registra el pago de esa ocurrencia
+- **Dado** un admin autenticado y "Básquet 1" libre tres sábados (`2026-11-21`, `2026-11-28`, `2026-12-05`) a las 10:00 de 60 minutos
+- **Cuando** crea una serie de 3 semanas con `guest = { name, phone }` y luego, con `now = 2026-11-20` al crear y luego `now = 2026-11-21 11:30` (la 1.ª ya terminó), registra el pago de esa ocurrencia
 - **Entonces** responde `201` con 3 reservas `createdBy = admin` y datos de invitado con el mismo `seriesId`; falta de nombre o teléfono responde `400`; solo la 1.ª pasa a `pagado` y las otras dos siguen `pendiente` (la 2.ª sigue sin poder cobrarse hasta que termine, `422`); un choque en cualquiera de las fechas responde `409` con la fecha y no crea ninguna.
 
 ## Prueba prevista por CA (ciclos 2 y 3)
