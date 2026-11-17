@@ -11,10 +11,13 @@
     "dev:web": "cd src/web && bun run dev",
     "build:web": "cd src/web && bun run build",
     "test:unit": "bun test tests/unit",
-    "test": "bun test"
+    "test": "bun test",
+    "e2e:server": "bun scripts/e2e-server.ts",
+    "e2e": "playwright test"
   },
   "devDependencies": {
     "@canchas/shared": "workspace:*",
+    "@playwright/test": "^1.65.1",
     "@types/bun": "latest",
     "mongodb": "^6.10.0",
     "typescript": "^5.6.0"
