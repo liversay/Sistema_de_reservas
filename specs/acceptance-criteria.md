@@ -97,7 +97,7 @@ Un `now` anterior al turno se asume salvo que se indique lo contrario.
 
 - **Dado** un admin autenticado y "Básquet 1" libre el `2026-11-21` a las 10:00
 - **Cuando** crea una reserva con nombre y teléfono de un cliente sin cuenta
-- **Entonces** se crea (`201`) una reserva con `createdBy = admin` y datos de invitado, que ocupa los bloques y aparece en "Reservas del día"; si falta nombre o teléfono responde `400`; si el turno choca responde `409`, y si cae fuera de horario o en el pasado responde `422`.
+- **Entonces** se crea (`201`) una reserva con `createdBy = admin` y datos de invitado, que ocupa los bloques y aparece en el tablero de Reservas; si falta nombre o teléfono responde `400`; si el turno choca responde `409`, y si cae fuera de horario o en el pasado responde `422`.
 
 ## CA-12 Pago solo después de jugar (RF-11; RN-07, RN-11)
 
