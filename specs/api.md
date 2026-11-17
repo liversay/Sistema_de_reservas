@@ -78,7 +78,7 @@ trata como sin sesión (`401`).
 | `GET /api/admin/courts` | — | `200 [cancha]` (incluye inactivas) | CA-14 |
 | `GET /api/admin/courts/:id` | — | `200 cancha`; `404` | CA-14 |
 | `POST /api/admin/courts` | `{ id, name, sport, format?, spaceIds, active, prices, schedule }`; `id` obligatorio en kebab-case `/^[a-z0-9-]+$/` | `201` cancha; `400` (incluye `id` inválido); `409` si el `id` ya existe | CA-14 |
-| `PUT /api/admin/courts/:id` | mismo cuerpo; `id` es opcional y, si viene, debe ser igual a `:id` (el id de la cancha es inmutable) | `200` cancha; `400` (incluye `id` distinto de `:id`); `404`. Reemplazo completo |
+| `PUT /api/admin/courts/:id` | mismo cuerpo; `id` es opcional y, si viene, debe ser igual a `:id` (el id de la cancha es inmutable) | `200` cancha; `400` (incluye `id` distinto de `:id`); `404`. Reemplazo completo | CA-14 |
 | `DELETE /api/admin/courts/:id` | — | `204`; `404`; `409` si la cancha tiene reservas (solo desactivarla) | CA-14 |
 
 Notas de cancha: `spaceIds` ≥ 1. `POST` y `PUT` aceptan `spaceIds` nuevos y los **insertan en
