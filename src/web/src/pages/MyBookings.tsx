@@ -74,9 +74,36 @@ export function MyBookings() {
     }
   }
 
+  async function cancelFuture(seriesId: string) {
+    setBusy(`series:${seriesId}`);
+    setError(null);
+    setDone(null);
+    try {
+      const { cancelled } = await api.cancelFuture(seriesId);
+      setDone(
+        cancelled === 0
+          ? "No quedaban reservas por cancelar en esa serie."
+          : `Cancelaste ${cancelled} ${cancelled === 1 ? "reserva" : "reservas"} de la serie. Los horarios quedaron libres.`,
+      );
+      setAsking(null);
+      await load();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "No pudimos cancelar la serie.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
   const now = new Date();
   const upcoming = (bookings ?? []).filter((b) => b.status === "confirmada" && at(b.date, b.endTime) > now).reverse();
   const past = (bookings ?? []).filter((b) => !upcoming.includes(b));
+  // CR-01: las próximas de una misma serie se agrupan (en la posición de su primera ocurrencia).
+  const groups: { seriesId?: string; items: Booking[] }[] = [];
+  for (const b of upcoming) {
+    const g = b.seriesId ? groups.find((x) => x.seriesId === b.seriesId) : undefined;
+    if (g) g.items.push(b);
+    else groups.push({ seriesId: b.seriesId, items: [b] });
+  }
 
   return (
     <>
@@ -132,31 +159,64 @@ export function MyBookings() {
                   </p>
                 ) : (
                   <ul className="booking-list">
-                    {upcoming.map((b) => (
-                      <BookingCard key={b.id} b={b} now={now}>
-                        {at(b.date, b.startTime) > now &&
-                          (asking === b.id ? (
-                            <div className="confirm-row">
-                              <span>¿Cancelar esta reserva?</span>
-                              <button type="button" className="btn btn-danger" disabled={busy === b.id} onClick={() => void cancel(b)}>
-                                {busy === b.id ? "Cancelando…" : "Sí, cancelar"}
+                    {groups.map((g) => {
+                      const cards = g.items.map((b) => (
+                        <BookingCard key={b.id} b={b} now={now}>
+                          {at(b.date, b.startTime) > now &&
+                            (asking === b.id ? (
+                              <div className="confirm-row">
+                                <span>¿Cancelar esta reserva?</span>
+                                <button type="button" className="btn btn-danger" disabled={busy === b.id} onClick={() => void cancel(b)}>
+                                  {busy === b.id ? "Cancelando…" : "Sí, cancelar"}
+                                </button>
+                                <button type="button" className="btn btn-secondary" onClick={() => setAsking(null)}>
+                                  No
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                className="btn btn-secondary"
+                                aria-label={`Cancelar reserva ${b.courtName} ${b.startTime}`}
+                                onClick={() => setAsking(b.id)}
+                              >
+                                Cancelar
                               </button>
-                              <button type="button" className="btn btn-secondary" onClick={() => setAsking(null)}>
-                                No
-                              </button>
+                            ))}
+                        </BookingCard>
+                      ));
+                      if (!g.seriesId) return cards[0];
+                      const key = `series:${g.seriesId}`;
+                      const first = g.items[0]!;
+                      return (
+                        <li key={key} className="series-group" data-testid="serie">
+                          <div className="series-head">
+                            <div>
+                              <div className="series-title">Serie semanal · {first.courtName}</div>
+                              <div className="muted small">
+                                {g.items.length} {g.items.length === 1 ? "próxima" : "próximas"} · {first.startTime}–{first.endTime}
+                              </div>
                             </div>
-                          ) : (
-                            <button
-                              type="button"
-                              className="btn btn-secondary"
-                              aria-label={`Cancelar reserva ${b.courtName} ${b.startTime}`}
-                              onClick={() => setAsking(b.id)}
-                            >
-                              Cancelar
-                            </button>
-                          ))}
-                      </BookingCard>
-                    ))}
+                            {asking === key ? (
+                              <div className="confirm-row">
+                                <span>¿Cancelar las próximas?</span>
+                                <button type="button" className="btn btn-danger" disabled={busy === key} onClick={() => void cancelFuture(g.seriesId!)}>
+                                  {busy === key ? "Cancelando…" : "Sí, cancelar"}
+                                </button>
+                                <button type="button" className="btn btn-secondary" onClick={() => setAsking(null)}>
+                                  No
+                                </button>
+                              </div>
+                            ) : (
+                              <button type="button" className="btn btn-secondary" onClick={() => setAsking(key)}>
+                                Cancelar las próximas
+                              </button>
+                            )}
+                          </div>
+                          <ul className="booking-list">{cards}</ul>
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
                 {past.length > 0 && (
@@ -190,6 +250,7 @@ function BookingCard({ b, now, children }: { b: Booking; now: Date; children?: R
         </div>
         <div className="booking-meta">
           <span className={`badge badge-${st.tone}`}>{st.label}</span>
+          {b.seriesId && <span className="badge badge-info">Serie</span>}
           <span className="booking-price">${b.price}</span>
           {b.status === "confirmada" && b.payment.status === "pendiente" && <span className="muted small">pagas al terminar</span>}
         </div>

@@ -8,7 +8,7 @@ import { BookingPanel } from "../components/BookingPanel";
 import { DayStrip } from "../components/DayStrip";
 import { DurationPicker } from "../components/DurationPicker";
 import { AlertIcon, CheckIcon, ClockIcon } from "../components/Icons";
-import { durationLabel, longDate, nextDays } from "../dates";
+import { durationLabel, longDate, money, nextDays } from "../dates";
 
 const SPORTS: { id: Sport | "todas"; label: string }[] = [
   { id: "todas", label: "Todas" },
@@ -53,7 +53,11 @@ export function Availability() {
 
   const [load, setLoad] = useState<Load>({ status: "loading" });
   const [submitting, setSubmitting] = useState(false);
-  const [notice, setNotice] = useState<{ kind: "ok"; booking: Booking } | { kind: "error"; message: string } | null>(null);
+  const [notice, setNotice] = useState<
+    { kind: "ok"; booking: Booking } | { kind: "series"; bookings: Booking[] } | { kind: "error"; message: string } | null
+  >(null);
+  const [repeat, setRepeat] = useState(false);
+  const [weeks, setWeeks] = useState(4);
 
   const [refreshWarning, setRefreshWarning] = useState<string | null>(null);
   // Solo la última petición puede escribir en la cuadrícula: al cambiar de día rápido, una
@@ -111,22 +115,24 @@ export function Availability() {
     setSubmitting(true);
     setNotice(null);
     try {
-      const booking = await api.book({
-        courtId: selection.courtId,
-        date,
-        startTime: fromSlot(selection.slot),
-        durationMin: duration,
-      });
-      setNotice({ kind: "ok", booking });
+      const base = { courtId: selection.courtId, date, startTime: fromSlot(selection.slot), durationMin: duration };
+      if (repeat) {
+        const { bookings } = await api.bookSeries({ ...base, weeks });
+        setNotice({ kind: "series", bookings });
+      } else {
+        setNotice({ kind: "ok", booking: await api.book(base) });
+      }
       update({ cancha: null, hora: null });
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
         goLogin();
         return;
       }
-      const message = e instanceof ApiError && e.status === 409 ? CONFLICT_MESSAGE : e instanceof ApiError ? e.message : String(e);
+      // En una serie el 409 trae la fecha que chocó: se conserva la selección para ajustar las semanas.
+      const message =
+        e instanceof ApiError && e.status === 409 && !repeat ? CONFLICT_MESSAGE : e instanceof ApiError ? e.message : String(e);
       setNotice({ kind: "error", message });
-      if (e instanceof ApiError && e.status === 409) update({ cancha: null, hora: null });
+      if (e instanceof ApiError && e.status === 409 && !repeat) update({ cancha: null, hora: null });
     } finally {
       setSubmitting(false);
       void refresh({ background: true });
@@ -177,6 +183,20 @@ export function Availability() {
                 <strong>Reserva confirmada.</strong> {notice.booking.courtName},{" "}
                 {longDate(notice.booking.date)}, {notice.booking.startTime}–{notice.booking.endTime} · $
                 {notice.booking.price}. <Link to="/mis-reservas">Ver mis reservas</Link>
+              </div>
+              <button type="button" className="notice-close" aria-label="Cerrar aviso" onClick={() => setNotice(null)}>
+                ×
+              </button>
+            </div>
+          )}
+          {notice?.kind === "series" && (
+            <div className="notice notice-ok" role="status">
+              <CheckIcon />
+              <div>
+                <strong>Serie confirmada: {notice.bookings.length} reservas.</strong> {notice.bookings[0]!.courtName},{" "}
+                {notice.bookings.map((b) => longDate(b.date)).join(", ")}, {notice.bookings[0]!.startTime}–
+                {notice.bookings[0]!.endTime} · {money(notice.bookings.reduce((n, b) => n + b.price, 0))} en total.{" "}
+                <Link to="/mis-reservas">Ver mis reservas</Link>
               </div>
               <button type="button" className="notice-close" aria-label="Cerrar aviso" onClick={() => setNotice(null)}>
                 ×
@@ -271,6 +291,10 @@ export function Availability() {
             fits={fits}
             loggedIn={!!user}
             submitting={submitting}
+            repeat={repeat}
+            weeks={weeks}
+            onRepeat={setRepeat}
+            onWeeks={setWeeks}
             onConfirm={() => void confirm()}
             onLogin={goLogin}
           />

@@ -4,6 +4,7 @@ import { fromSlot, priceFor, toSlot, type Duration } from "../../shared";
 import { money, weekdayIndex } from "../../dates";
 import { DurationPicker } from "../DurationPicker";
 import { AlertIcon } from "../Icons";
+import { RepeatOption } from "../RepeatOption";
 
 /** Horas de inicio posibles ese día según el horario de la cancha (pasos de 30 min). */
 function startOptions(court: AdminCourt | undefined, date: string, duration: Duration): string[] {
@@ -23,7 +24,8 @@ export function NewBookingForm({
 }: {
   courts: AdminCourt[];
   initialDate: string;
-  onCreated: (b: AdminBooking) => void;
+  /** `count` > 1 cuando se creó una serie (CR-01). */
+  onCreated: (b: AdminBooking, count: number) => void;
   onClose: () => void;
 }) {
   const active = useMemo(() => courts.filter((c) => c.active), [courts]);
@@ -36,6 +38,8 @@ export function NewBookingForm({
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  const [repeat, setRepeat] = useState(false);
+  const [weeks, setWeeks] = useState(4);
   const heading = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -61,17 +65,15 @@ export function NewBookingForm({
     if (Object.keys(f).length) return;
     setBusy(true);
     try {
-      onCreated(
-        await api.admin.createBooking({
-          courtId,
-          date,
-          startTime: start,
-          durationMin: duration,
-          guest: { name: name.trim(), phone: phone.trim() },
-        }),
-      );
+      const base = { courtId, date, startTime: start, durationMin: duration, guest: { name: name.trim(), phone: phone.trim() } };
+      if (repeat) {
+        const { bookings } = await api.admin.createSeries({ ...base, weeks });
+        onCreated(bookings[0]!, bookings.length);
+      } else {
+        onCreated(await api.admin.createBooking(base), 1);
+      }
     } catch (err) {
-      if (err instanceof ApiError && err.status === 409) setError(CONFLICT_MESSAGE);
+      if (err instanceof ApiError && err.status === 409) setError(repeat ? err.message : CONFLICT_MESSAGE);
       else if (err instanceof ApiError && err.fields) {
         setFields(err.fields);
         setError(err.message);
@@ -143,15 +145,16 @@ export function NewBookingForm({
         <input type="tel" autoComplete="off" value={phone} onChange={(e) => { setPhone(e.target.value); setFields(({ phone: _p, "guest.phone": _g, ...r }) => r); }} />
         {(fields.phone || fields["guest.phone"]) && <span className="field-error">{fields.phone ?? fields["guest.phone"]}</span>}
       </label>
+      <RepeatOption date={date} price={price} repeat={repeat} weeks={weeks} onRepeat={setRepeat} onWeeks={setWeeks} />
       <div className="panel-total admin-total">
-        <span>Precio</span>
+        <span>{repeat ? "Total de la serie" : "Precio"}</span>
         <span className={`price${price === null ? " is-empty" : ""}`} data-testid="nueva-precio">
-          {price === null ? "—" : money(price)}
+          {price === null ? "—" : money(repeat ? price * weeks : price)}
         </span>
       </div>
       <div className="form-actions">
         <button type="submit" className="btn btn-primary" disabled={busy || !!closedDay}>
-          {busy ? "Creando…" : "Crear reserva"}
+          {busy ? "Creando…" : repeat ? `Crear ${weeks} reservas` : "Crear reserva"}
         </button>
         <button type="button" className="btn btn-secondary" onClick={onClose} disabled={busy}>
           Cerrar
