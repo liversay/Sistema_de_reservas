@@ -14,6 +14,14 @@ import {
   test,
 } from "./fixtures";
 
+const WD = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+const MON = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+/** "jueves 19 nov" como lo muestra la app. */
+function weekdayAndDay(iso: string) {
+  const [y, m, d] = iso.split("-").map(Number) as [number, number, number];
+  return `${WD[new Date(y, m - 1, d).getDay()]} ${d} ${MON[m - 1]}`;
+}
+
 const MEDIA_A = { courtId: "media-a", spaceIds: ["futbol-media-a"] };
 
 test("CA-10 admin ve las reservas del día y puede cancelar cualquiera", async ({ page, context, browser }) => {
@@ -126,6 +134,8 @@ test("CA-12 el admin cobra una reserva jugada; antes de jugar no se puede cobrar
   const future = await bookViaApi(client.request, { courtId: "media-b", date: dayOffset(2), startTime: "22:00", durationMin: 60 });
   const early = await context.request.post(`/api/admin/bookings/${future.id}/payment`, { data: { amount: 50, method: "efectivo" } });
   expect(early.status()).toBe(422);
+  const stillPending = await (await context.request.get(`/api/admin/bookings?date=${dayOffset(2)}`)).json();
+  expect(stillPending.find((b: { id: string }) => b.id === future.id).payment.status).toBe("pendiente");
   await client.close();
 
   await page.goto("/admin/pagos");
@@ -145,8 +155,10 @@ test("CA-12 el admin cobra una reserva jugada; antes de jugar no se puede cobrar
 
   // Aparece en "cobrados" del día jugado.
   const paid = page.getByRole("region", { name: "Tabla de cobrados" });
-  for (let i = 0; i < 2; i++) await page.getByRole("button", { name: /Anterior/ }).click();
-  await expect(page.getByText(played.date.slice(8), { exact: false }).first()).toBeVisible();
+  const dayInput = page.getByLabel("Fecha");
+  await dayInput.fill(played.date);
+  await expect(dayInput).toHaveValue(played.date);
+  await expect(page.locator(".daynav-label")).toHaveText(new RegExp(`^${weekdayAndDay(played.date)}`, "i"));
   const paidRow = paid.getByRole("row").filter({ hasText: "Fútbol · Media A" });
   await expect(paidRow).toContainText("$45");
   await expect(paidRow).toContainText("transferencia");

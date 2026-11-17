@@ -89,7 +89,7 @@ export async function seedPastBooking(opts: {
       _id: id as never,
       courtId: opts.courtId,
       ...(opts.userId ? { userId: opts.userId } : { guest: opts.guest }),
-      createdBy: "admin",
+      createdBy: opts.userId ? "client" : "admin",
       date,
       startSlot: opts.startSlot,
       durationMin,

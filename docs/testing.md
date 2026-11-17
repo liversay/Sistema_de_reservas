@@ -37,36 +37,16 @@ Las pruebas de integración crean una BD aleatoria (`canchas_test_*`) y la elimi
 
 ## Tabla RN/CA → prueba
 
-Resultado de la última corrida local (Ciclo 1): `bun test` → 48 pass, 0 fail (8 archivos). Los CA de interfaz (e2e) se completan en la tarea 9.
+Resultado de la corrida local (Ciclo 2, tarea 9): `bunx playwright test` → **16 e2e en verde** (2 corridas seguidas sobre BD fresca) y `bun test` → 73 pass, 0 fail.
 
 | RN / CA | Prueba | Tipo | Estado |
 |---|---|---|---|
-| RN-01, CA-05 | `double-booking.test.ts`: "misma cancha mismo turno → 409", "solapamiento parcial 20:00/90 vs 21:00/60 → 409", "10 reservas concurrentes → exactamente 1 éxito y 9 ConflictError" (y `slot_locks` = 2) | integración | pasa |
-| RN-02, CA-06 | `double-booking.test.ts`: "completa bloquea ambas mitades", "una mitad ocupada bloquea la completa", "completa 20:00/60 con Media A 20:30/60 → 409" | integración | pasa |
-| RN-03, CA-03 | `bookings-core.test.ts` (bloque/duración inválidos), `time.test.ts`, `pricing.test.ts` | unitaria / integración | pasa |
-| RN-04, CA-01 | `rules.test.ts`, `availability.test.ts` (estados pasado/cerrado) | unitaria / integración | pasa |
-| RN-05 | `bookings-core.test.ts` ("turno pasado -> RuleError") | integración | pasa |
-| RN-08 | `availability.test.ts` y `bookings-core.test.ts` (cancha inactiva) | integración | pasa |
-| CA-01 | `availability.test.ts` | integración | pasa (e2e pendiente) |
-| CA-02 | — | e2e | pendiente |
-| CA-03 | `pricing.test.ts`, `bookings-core.test.ts` (precio guardado) | unitaria / integración | pasa (e2e pendiente) |
-| CA-04 | `bookings-core.test.ts` (reserva con precio y bloques) | integración | pasa (e2e pendiente) |
-| CA-05 | ver RN-01 | integración | pasa |
-| CA-06 | ver RN-02 | integración | pasa |
-| CA-07 | `bookings-core.test.ts` (`cancelBooking`) | integración | pasa (e2e pendiente) |
-| CA-08 | `schemas.test.ts` | unitaria | parcial (API pendiente) |
-| CA-09 | — | integración / e2e | pendiente |
-| CA-10 | — | integración / e2e | pendiente |
-| CA-11 | — | integración | pendiente |
-| CA-12 | — | integración / e2e | pendiente |
-| CA-13 | — | integración | pendiente |
-| CA-14 | — | integración / e2e | pendiente |
-## Tabla CA → prueba
-
-Resultado de la corrida local de Playwright (tarea 9, ciclo 2): **16 pruebas e2e en verde** (2 corridas seguidas sobre BD fresca) y `bun test` con 73 pruebas en verde.
-
-| CA | Prueba | Tipo | Estado |
-|---|---|---|---|
+| RN-01 | `double-booking.test.ts`: misma cancha mismo turno → 409, solape parcial → 409, 10 concurrentes → exactamente 1 éxito | integración | ✔ pasa |
+| RN-02 | `double-booking.test.ts`: la completa bloquea ambas mitades y una mitad ocupada bloquea la completa | integración | ✔ pasa |
+| RN-03 | `bookings-core.test.ts` (bloque/duración inválidos), `time.test.ts`, `pricing.test.ts` | unitaria + integración | ✔ pasa |
+| RN-04 | `rules.test.ts`, `availability.test.ts` (estados pasado/cerrado) | unitaria + integración | ✔ pasa |
+| RN-05 | `bookings-core.test.ts` («turno pasado → RuleError») | integración | ✔ pasa |
+| RN-08 | `availability.test.ts` y `bookings-core.test.ts` (cancha inactiva) | integración | ✔ pasa |
 | CA-01 | `cliente.e2e.ts` «CA-01 el cliente ve la disponibilidad…»; `availability.test.ts` | e2e + integración | ✔ pasa |
 | CA-02 | `cliente.e2e.ts` «CA-02 el filtro por deporte…» | e2e | ✔ pasa |
 | CA-03 | `cliente.e2e.ts` «CA-03 elegir duración recalcula…»; `pricing.test.ts` | e2e + unitaria | ✔ pasa |
@@ -82,4 +62,4 @@ Resultado de la corrida local de Playwright (tarea 9, ciclo 2): **16 pruebas e2e
 | CA-13 | `backoffice.e2e.ts` «CA-13 no se presentó…» (422 antes de terminar, sale de «por cobrar», pago posterior 409); `admin.test.ts` | e2e + integración | ✔ pasa |
 | CA-14 | `backoffice.e2e.ts` «CA-14 configurar canchas…» (precio nuevo, horario recortado → «cerrado», mantenimiento, 409 al borrar con reservas, alta de «Pádel 2»); `admin.test.ts` | e2e + integración | ✔ pasa |
 
-**Límites conocidos de la cobertura e2e.** Los estados `pasado` (bloque ya iniciado) y la función de «borrar cancha» (la UI no ofrece borrar; se prueba el 409 por API) no se verifican en navegador porque dependen de la hora real de la corrida; los cubren las pruebas unitarias/integración (`availability.test.ts`, `admin.test.ts`). «Pádel 1 en mantenimiento» de CA-01 se prueba con Media A en CA-14.
+**Límites conocidos de la cobertura e2e.** El estado `pasado` de la grilla y «borrar cancha» (la UI no ofrece borrar; el 409 se prueba por API) no se verifican en navegador porque dependen de la hora real de la corrida; los cubren `availability.test.ts` y `admin.test.ts`. «Pádel 1 en mantenimiento» de CA-01 se prueba con Media A en CA-14.
