@@ -10,7 +10,7 @@ Un `now` anterior al turno se asume salvo que se indique lo contrario.
 | CA-01 | Ver disponibilidad | RF-01 | RN-02, RN-04, RN-08 |
 | CA-02 | Filtro por deporte | RF-02 | — |
 | CA-03 | Elegir duración y precio | RF-03 | RN-03, RN-10 |
-| CA-04 | Cliente reserva un turno libre | RF-04, RF-05 | RN-01, RN-03, RN-04, RN-05 |
+| CA-04 | Cliente reserva un turno libre *(CR-02: invitado sin sesión, precio 20)* | RF-04, RF-05 | RN-01, RN-03, RN-04, RN-05 |
 | CA-05 | Doble reserva en la misma cancha | RF-04 | RN-01 |
 | CA-06 | Mitad contra completa | RF-04 | RN-01, RN-02 |
 | CA-07 | Cancelar libera el turno | RF-06 | RN-06 |
@@ -26,7 +26,7 @@ Un `now` anterior al turno se asume salvo que se indique lo contrario.
 | CA-17 | **CR-01** Cancelar las próximas de una serie | RF-16 | RN-06, RN-13 |
 | CA-18 | **CR-01** Admin crea serie para invitado y cada ocurrencia se cobra aparte | RF-15 | RN-09, RN-07, RN-12, RN-13 |
 | CA-19 | **CR-02** Reservar sin cuenta (nombre y teléfono) | RF-17 | RN-15, RN-01..RN-05 |
-| CA-20 | **CR-02** Socio con sesión recibe descuento; cambiar el % no altera reservas previas | RF-18 | RN-16, RN-10 |
+| CA-20 | **CR-02** Socio con sesión recibe descuento; cambiar el % no altera reservas previas; «Club de socios» con el formulario separado del encabezado | RF-18, RF-07 | RN-16, RN-10 |
 | CA-21 | **CR-02** Horizonte de 30 días (reservas y ocurrencias de series) | RF-19 | RN-14, RN-12 |
 | CA-22 | **CR-02** Sin horas pasadas y horas en 12 h en toda la interfaz | RF-22 | RN-05 |
 | CA-23 | **CR-02** Tablero de reservas del backoffice con tarjeta de detalle | RF-20 | RN-06, RN-07, RN-11, RN-13 |
@@ -53,9 +53,9 @@ Un `now` anterior al turno se asume salvo que se indique lo contrario.
 
 ## CA-04 Cliente reserva un turno libre (RF-04, RF-05; RN-01, RN-03, RN-04, RN-05)
 
-- **Dado** un cliente autenticado y "Pádel 1" libre el `2026-11-19` a las 18:00 por 1 h
-- **Cuando** confirma la reserva
-- **Entonces** se crea una reserva `confirmada` con precio 20 USD y pago `pendiente`, los bloques 18:00 y 18:30 quedan ocupados en la disponibilidad, y aparece en "Mis reservas".
+- **Dado** un visitante sin sesión *(modificado por CR-02: antes «un cliente autenticado»; con sesión de socio el precio llevaría descuento, ver CA-20)* y "Pádel 1" libre el `2026-11-19` a las 18:00 por 1 h
+- **Cuando** confirma la reserva indicando nombre y teléfono (`guest`)
+- **Entonces** se crea una reserva `confirmada` con precio 20 USD (`discountPct = 0`) y pago `pendiente`, los bloques 18:00 y 18:30 quedan ocupados en la disponibilidad; un socio con sesión la ve en "Mis reservas" (con descuento, CA-20).
 
 ## CA-05 Doble reserva en la misma cancha (RF-04; RN-01)
 
@@ -90,8 +90,8 @@ Un `now` anterior al turno se asume salvo que se indique lo contrario.
 ## CA-10 Admin ve reservas del día (RF-09; RN-06)
 
 - **Dado** un admin autenticado y reservas del `2026-11-19` (confirmada, cancelada, jugada)
-- **Cuando** abre "Reservas del día" de esa fecha
-- **Entonces** ve una tabla con cancha, hora, cliente (o invitado), estado y pago de cada reserva, y puede cancelar cualquiera de ellas (`200`) liberando sus bloques; cancelar una ya cancelada responde `409`; un cliente que llama a cualquier ruta `/api/admin/*` recibe `403` y sin sesión `401`.
+- **Cuando** abre "Reservas del día" de esa fecha *(modificado por CR-02: ahora el tablero de Reservas, ver CA-23)*
+- **Entonces** ve las reservas de cada cancha *(CR-02: en el tablero de Reservas, antes una tabla)* con hora, cliente (o invitado), estado y pago de cada una, y puede cancelar cualquiera de ellas (`200`) liberando sus bloques; cancelar una ya cancelada responde `409`; un cliente que llama a cualquier ruta `/api/admin/*` recibe `403` y sin sesión `401`.
 
 ## CA-11 Admin crea reserva para invitado (RF-10; RN-09)
 
@@ -103,7 +103,7 @@ Un `now` anterior al turno se asume salvo que se indique lo contrario.
 
 - **Dado** una reserva `confirmada` de "Fútbol · Media A" de 18:00 a 19:00 del `2026-11-19`, precio 50 USD, pago `pendiente`
 - **Cuando** el admin registra un pago con `now` = 18:30
-- **Entonces** responde `422`, el pago sigue `pendiente` y la reserva no figura en "por cobrar" (aún no es jugada); con `now` = 19:00 o posterior la reserva ya es jugada y aparece en "por cobrar" mientras no se pague; el pago acepta monto (prellenado con 50 USD, ajustable), método (efectivo, transferencia o tarjeta) y quién cobró, y pasa a `pagado` con `paidBy` = admin de la sesión, con lo que sale de `GET /api/admin/payments?status=pending` y aparece en `status=paid`; un segundo pago sobre la misma reserva, o sobre una `cancelada`, responde `409`; monto `0` o método distinto de los tres responde `400`.
+- **Entonces** responde `422`, el pago sigue `pendiente` y la reserva no figura en "por cobrar" (aún no es jugada); con `now` = 19:00 o posterior la reserva ya es jugada y aparece en "por cobrar" mientras no se pague; el pago acepta monto (prellenado con 50 USD, ajustable), método (efectivo, transferencia, tarjeta o yappy; *modificado por CR-02: antes tres métodos*) y quién cobró, y pasa a `pagado` con `paidBy` = admin de la sesión, con lo que sale de `GET /api/admin/payments?status=pending` y aparece en `status=paid`; un segundo pago sobre la misma reserva, o sobre una `cancelada`, responde `409`; monto `0` o método distinto de los cuatro (`efectivo`, `transferencia`, `tarjeta`, `yappy`) responde `400`.
 
 ## CA-13 No se presentó (RF-12; RN-11)
 
@@ -147,7 +147,7 @@ Un `now` anterior al turno se asume salvo que se indique lo contrario.
 - **Cuando** reserva indicando `guest = { name: "Ana Pérez", phone: "+507 6000 1234" }`
 - **Entonces** `POST /api/bookings` responde `201` con una reserva `confirmada`, `guest` con esos datos, `createdBy = client`, `discountPct = 0`, `price = basePrice = 20` y pago `pendiente`; los bloques 18:00 y 18:30 quedan ocupados; sin `guest`, con nombre de 1 carácter o con teléfono `"abc"` responde `400` con `fields` por campo y no crea nada; el choque sigue siendo `409` "Ese horario ya fue tomado. Elige otro."; lo mismo vale para `POST /api/bookings/series` (con `guest`, `201`; sin `guest`, `400`); con sesión de cliente, `guest` se ignora y la reserva queda a nombre del usuario; `GET /api/bookings/mine` y cancelar sin sesión siguen respondiendo `401`; en la web, el panel «Tu reserva» pide nombre y teléfono cuando no hay sesión y muestra los errores por campo en español.
 
-## CA-20 Socio con sesión recibe descuento (CR-02; RF-18; RN-16, RN-10)
+## CA-20 Socio con sesión recibe descuento (CR-02; RF-18, RF-07; RN-16, RN-10)
 
 - **Dado** el descuento de socios en 10 % y un cliente autenticado, y "Fútbol · Media A" libre el `2026-11-19` a las 20:00
 - **Cuando** reserva 60 minutos con sesión y luego el admin cambia el descuento a 20 %
@@ -194,18 +194,18 @@ e2e = Playwright (tarea 9, `tests/e2e/*.e2e.ts`, cada prueba nombra sus CA).
 | CA-01 | `GET /api/availability`: cuatro estados, Completa ocupada con Media A, cancha inactiva ausente, `400` fecha inválida | cuadrícula del jueves |
 | CA-02 | — (filtro de interfaz) | filtrar por pádel y quitar el filtro |
 | CA-03 | precio calculado por el servidor para 60/90/120 | panel "Tu reserva" |
-| CA-04 | `POST /api/bookings` `201`, `GET /api/bookings/mine` | reservar Pádel 1 y ver "Mis reservas" |
+| CA-04 | `POST /api/bookings` `201` *(CR-02: sin sesión con `guest`, precio 20)*, `GET /api/bookings/mine` con sesión | reservar Pádel 1 *(CR-02: sin cuenta)* y ver "Mis reservas" con sesión |
 | CA-05 | choque parcial `409` con mensaje exacto; 10 concurrentes vía HTTP, 1 éxito | segundo cliente recibe el aviso |
 | CA-06 | Media A vs Completa `409` y a la inversa; Media B libre | — |
 | CA-07 | cancelar `200`, ajena `404`, ya cancelada `409`, ya empezada `422`; turno reservable de nuevo | cancelar desde "Mis reservas" |
 | CA-08 | registro `201`, `400` con `fields` por campo, `409` email repetido | formulario de registro |
-| CA-09 | login `200`/`401`, `me`, logout `204`, cookie alterada `401`, reservar sin sesión `401` | iniciar y cerrar sesión |
-| CA-10 | `GET` y cancelar admin; `401`/`403` en todas las rutas `/api/admin/*` | tabla "Reservas del día" |
+| CA-09 | login `200`/`401`, `me`, logout `204`, cookie alterada `401`; *(CR-02: reservar sin sesión ya no es `401`: con `guest` `201`, sin `guest` `400`; `mine` sin sesión `401`)* | iniciar y cerrar sesión |
+| CA-10 | `GET` y cancelar admin; `401`/`403` en todas las rutas `/api/admin/*` | tablero de Reservas *(CR-02; antes tabla "Reservas del día")* |
 | CA-11 | invitado `201`, `400`, `409`, `422` | crear reserva para invitado |
-| CA-12 | pago con `now` 18:30 `422` y 19:00 `200`; segundo pago `409`; listas `pending`/`paid`; `amount` 0 `400` | registrar cobro |
+| CA-12 | pago con `now` 18:30 `422` y 19:00 `200`; segundo pago `409`; listas `pending`/`paid`; `amount` 0 `400`; *(CR-02)* método `yappy` `200`, método distinto de los cuatro `400` | registrar cobro |
 | CA-13 | no-show `200`, antes de terminar `422`, luego pago `409`, ya no está en `pending` | marcar "no se presentó" |
 | CA-14 | PUT precios/horario/inactiva y reserva existente intacta; `DELETE` con reservas `409`, sin reservas `204`; crear "Pádel 2" con espacio nuevo | edición de cancha en backoffice |
-| CA-15 *(CR-01)* | `POST /api/bookings/series` `201` con 4 reservas, mismo `seriesId`, fechas +7, precio por ocurrencia; `weeks` 1 y 9 `400`; `401` sin sesión | reservar serie y verla en "Mis reservas" |
+| CA-15 *(CR-01)* | `POST /api/bookings/series` `201` con 4 reservas, mismo `seriesId`, fechas +7, precio por ocurrencia; `weeks` 1 y 9 `400`; *(CR-02: sin sesión `201` con `guest` / `400` sin `guest`, ya no `401`)* | reservar serie y verla en "Mis reservas" |
 | CA-16 *(CR-01)* | choque en la 3.ª fecha `409` con mensaje exacto y 0 reservas creadas; Media A vs Completa; `422` por fecha pasada o inactiva con la fecha; series concurrentes solapadas, 1 completa | segundo cliente recibe el aviso con la fecha |
 | CA-17 *(CR-01)* | `cancel-future` con `now` intermedio `200 { cancelled: 2 }`, ajena `404`, admin cualquiera, repetir `{ cancelled: 0 }`, bloques liberados | "Cancelar las próximas" desde "Mis reservas" |
 | CA-18 *(CR-01)* | admin `POST /api/admin/bookings/series` invitado `201`, `400`, `409`; pago de una ocurrencia no cambia las otras | crear serie para invitado y cobrar una ocurrencia |

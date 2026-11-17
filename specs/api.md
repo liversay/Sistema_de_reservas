@@ -38,6 +38,8 @@ Rutas de **cliente** y `GET /api/auth/me`: `401` sin sesión. Rutas `/api/admin/
 `403` con sesión de rol `client`. Una cookie con firma inválida o de un usuario que ya no existe se
 trata como sin sesión (`401`).
 
+*Modificado por CR-02:* `POST /api/bookings` y `POST /api/bookings/series` aceptan sesión **opcional** (sin sesión exigen `guest`, RN-15) y ya no devuelven `401`; el resto de rutas de cliente mantiene `401` sin sesión.
+
 ## Público
 
 | Método y ruta | Descripción | CA |
@@ -71,7 +73,7 @@ trata como sin sesión (`401`).
 | `GET /api/admin/bookings?date=` | — | `200 [reserva]` del día (todos los estados, **incluidas las canceladas**, que el tablero lista aparte porque no ocupan bloques) con `played`, `basePrice`, `discountPct`, y cliente (`user: { name, phone }`) o `guest`; `400` fecha inválida | CA-10, CA-23 |
 | `GET /api/admin/bookings/calendar?from=&to=` *(CR-02)* | `from`, `to` `YYYY-MM-DD`, `from ≤ to`, rango ≤ 62 días | `200 [{ date, count }]` con las reservas **no canceladas** por día (solo días con `count > 0`), orden ascendente; `400` fecha inválida, `from > to` o rango > 62 días | CA-23 |
 | `POST /api/admin/bookings` | `{ courtId, date, startTime, durationMin, guest: { name, phone } }` | `201` reserva con `createdBy: admin` y `guest`; `400` (falta nombre o teléfono); `404` cancha; `409` choque; `422` horario, pasado o cancha inactiva | CA-11 |
-| `POST /api/admin/bookings/series` *(CR-01)* | `{ courtId, date, startTime, durationMin, weeks, guest: { name, phone } }` | `201 { seriesId, bookings }` con `createdBy: admin` y `guest`; `400` (falta nombre o teléfono, `weeks` fuera de 2…8); `404` cancha; `409` con la fecha que choca; `422` con la fecha; todo-o-nada (RN-12) | CA-18 |
+| `POST /api/admin/bookings/series` *(CR-01)* | `{ courtId, date, startTime, durationMin, weeks, guest: { name, phone } }` | `201 { seriesId, bookings }` con `createdBy: admin` y `guest`; `400` (falta nombre o teléfono, `weeks` fuera de 2…8); `404` cancha; `409` con la fecha que choca; `422` horario, pasado, cancha inactiva u horizonte de 30 días *(CR-02, RN-14)*, con la fecha; todo-o-nada (RN-12) | CA-18, CA-21 |
 | `POST /api/admin/bookings/series/:seriesId/cancel-future` *(CR-01)* | — | `200 { cancelled: n }` sobre cualquier serie, solo ocurrencias `confirmadas` que no han empezado; `404` serie inexistente | CA-17 |
 | `POST /api/admin/bookings/:id/payment` | `{ amount, method: "efectivo"\|"transferencia"\|"tarjeta"\|"yappy" }` *(CR-02: `yappy` nuevo)* con `amount > 0` | `200` reserva con `payment: { status: pagado, amount, method, paidAt, paidBy }` (`paidBy` = id del admin de la sesión); `400`; `404`; `409` ya pagada, `cancelada` o `no_show`; `422` aún no terminó (el `409` se evalúa antes que el `422`) | CA-12, CA-13 |
 | `POST /api/admin/bookings/:id/no-show` | — | `200` reserva con `status: no_show` (conserva los bloques); `404`; `409` no está `confirmada`; `422` aún no terminó (el `409` se evalúa antes que el `422`) | CA-13 |

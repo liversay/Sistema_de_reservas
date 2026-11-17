@@ -37,7 +37,7 @@
 - **Contexto:** un equipo quiere la misma cancha todos los jueves a las 20:00 durante varias semanas. Los ciclos 1 y 2 no dejaron `seriesId` ni nada preparado para series.
 - **Alternativas:** (2) crear las ocurrencias que se pueda y avisar de las que chocan (series parciales): deja al equipo con una serie incompleta y sin forma clara de reintentar; (3) un documento de serie único con una lista de fechas y un solo bloqueo: rompe el pago, la cancelación y el no-show por ocurrencia, y rompe `slot_locks` por reserva.
 - **Decisión:** una serie se crea **todo-o-nada** en una sola transacción (RN-12): de 2 a 8 ocurrencias en `fecha + 7·k`; si una choca (`409`) o incumple una regla (`422`), no se crea ninguna y el error nombra la fecha. Cada ocurrencia es una reserva normal con `seriesId` compartido (RN-13), con sus propios `slot_locks`, precio, cancelación y pago. Se añade "cancelar las próximas" (solo las que no han empezado). Se reutiliza el índice único de `slot_locks` (ADR-002), por lo que la garantía anti-choque no cambia.
-- **Consecuencias:** `bookings.seriesId?` opcional (sin migración) e índice `(seriesId)`; cuatro endpoints nuevos; hasta 8 reservas por transacción; el límite de 8 acota su tamaño; el cliente debe elegir otra hora si una fecha está tomada, sin ofrecer saltos de fecha en este ciclo.
+- **Consecuencias:** `bookings.seriesId?` opcional (sin migración) e índice `(seriesId)`; cuatro endpoints nuevos; hasta 8 reservas por transacción; el límite de 8 acota su tamaño *(CR-02, ADR-006: el horizonte de 30 días lo reduce en la práctica a 5 ocurrencias)*; el cliente debe elegir otra hora si una fecha está tomada, sin ofrecer saltos de fecha en este ciclo.
 
 ## ADR-006 Reserva sin cuenta, club de socios y horizonte de 30 días (CR-02)
 
