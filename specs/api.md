@@ -19,7 +19,7 @@ Mensaje de choque exacto: `"Ese horario ya fue tomado. Elige otro."`
 
 | Método y ruta | Descripción | CA |
 |---|---|---|
-| `GET /api/availability?date=` | Canchas activas con el estado de cada bloque de 30 min (libre/ocupado/fuera de horario). `400` si la fecha es inválida. | CA-01, CA-02, CA-03 |
+| `GET /api/availability?date=` | Canchas activas con el estado de cada bloque de 30 min (exactamente cuatro estados: `libre` \| `ocupado` \| `cerrado` \| `pasado`; `cerrado` = fuera del horario de atención de la cancha ese día, o cancha sin horario ese bloque; `pasado` = bloque que ya inició). `400` si la fecha es inválida. | CA-01, CA-02, CA-03 |
 
 ## Auth
 

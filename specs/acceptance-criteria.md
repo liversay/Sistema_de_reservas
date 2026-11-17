@@ -26,7 +26,7 @@ Un `now` anterior al turno se asume salvo que se indique lo contrario.
 
 - **Dado** el jueves `2026-11-19` con "Fútbol · Media A" reservada de 20:00 a 21:00 y "Pádel 1" en mantenimiento
 - **Cuando** el cliente abre la disponibilidad de ese día
-- **Entonces** ve una fila por cancha activa y una columna por bloque de 30 min dentro del horario de atención; los bloques 20:00 y 20:30 de Media A figuran ocupados; "Fútbol · Completa" figura no disponible en esos mismos bloques (RN-02); "Pádel 1" no aparece como disponible (RN-08).
+- **Entonces** ve una fila por cancha activa y una columna por bloque de 30 min dentro del horario de atención; cada bloque tiene exactamente uno de cuatro estados: `libre`, `ocupado`, `cerrado` (fuera del horario de atención) o `pasado` (bloque ya iniciado); los bloques 20:00 y 20:30 de Media A figuran `ocupado`; "Fútbol · Completa" figura `ocupado` en esos mismos bloques (RN-02); "Pádel 1" no aparece como disponible (RN-08).
 
 ## CA-02 Filtro por deporte (RF-02)
 
@@ -90,9 +90,9 @@ Un `now` anterior al turno se asume salvo que se indique lo contrario.
 
 ## CA-12 Pago solo después de jugar (RF-11; RN-07, RN-11)
 
-- **Dado** una reserva `confirmada` de 60 USD de 18:00 a 19:00 del `2026-11-19`
+- **Dado** una reserva `confirmada` de "Fútbol · Media A" de 18:00 a 19:00 del `2026-11-19`, precio 50 USD, pago `pendiente`
 - **Cuando** el admin registra un pago con `now` = 18:30
-- **Entonces** responde `422` y el pago sigue `pendiente`; con `now` = 19:00 o posterior acepta monto (prellenado con el precio, ajustable), método (efectivo, transferencia o tarjeta) y quién cobró, y el pago pasa a `pagado`; un segundo pago sobre la misma reserva responde `409`; la reserva aparece en "por cobrar" antes del pago y en "cobrados" después.
+- **Entonces** responde `422`, el pago sigue `pendiente` y la reserva no figura en "por cobrar" (aún no es jugada); con `now` = 19:00 o posterior la reserva ya es jugada y aparece en "por cobrar" mientras no se pague; el pago acepta monto (prellenado con 50 USD, ajustable), método (efectivo, transferencia o tarjeta) y quién cobró, y pasa a `pagado`, con lo que sale de "por cobrar" y aparece en "cobrados"; un segundo pago sobre la misma reserva responde `409`.
 
 ## CA-13 No se presentó (RF-12; RN-11)
 
