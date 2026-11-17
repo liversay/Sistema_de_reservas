@@ -6,6 +6,7 @@
     "db:start": "bun scripts/db-start.ts",
     "db:stop": "bun scripts/db-stop.ts",
     "db:seed": "bun src/api/seed.ts",
+    "dev:api": "bun --watch src/api/server.ts",
     "test:unit": "bun test tests/unit",
     "test": "bun test"
   },
