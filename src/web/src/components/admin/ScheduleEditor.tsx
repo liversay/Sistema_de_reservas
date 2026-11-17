@@ -1,5 +1,6 @@
 import type { ScheduleDay } from "../../api";
 import { timeOptions, WEEKDAYS } from "../../dates";
+import { formatTime12 } from "../../format";
 
 export function defaultSchedule(): ScheduleDay[] {
   return Array.from({ length: 7 }, (_, weekday) => ({ weekday, open: "16:00", close: "23:00", closed: false }));
@@ -16,10 +17,10 @@ function Options({ value }: { value: string }) {
   const all = timeOptions();
   return (
     <>
-      {!all.includes(value) && <option value={value}>{value}</option>}
+      {!all.includes(value) && <option value={value}>{formatTime12(value)}</option>}
       {all.map((t) => (
         <option key={t} value={t}>
-          {t}
+          {formatTime12(t)}
         </option>
       ))}
     </>

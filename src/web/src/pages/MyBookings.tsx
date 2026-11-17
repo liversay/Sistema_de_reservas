@@ -4,7 +4,8 @@ import { api, ApiError, type Booking } from "../api";
 import { useAuth } from "../auth";
 import { CourtIcon } from "../components/CourtIcon";
 import { AlertIcon, CheckIcon } from "../components/Icons";
-import { durationLabel, longDate, parseIso } from "../dates";
+import { durationLabel, parseIso } from "../dates";
+import { formatLongDate, formatTime12 } from "../format";
 import type { Sport } from "../shared";
 
 function at(date: string, hhmm: string): Date {
@@ -58,7 +59,7 @@ export function MyBookings() {
     setDone(null);
     try {
       await api.cancel(b.id);
-      setDone(`Cancelaste ${b.courtName}, ${longDate(b.date)} ${b.startTime}. El horario quedó libre.`);
+      setDone(`Cancelaste ${b.courtName}, ${formatLongDate(b.date)} ${formatTime12(b.startTime)}. El horario quedó libre.`);
       setAsking(null);
       await load();
     } catch (e) {
@@ -177,7 +178,7 @@ export function MyBookings() {
                               <button
                                 type="button"
                                 className="btn btn-secondary"
-                                aria-label={`Cancelar reserva ${b.courtName} ${b.startTime}`}
+                                aria-label={`Cancelar reserva ${b.courtName} ${formatTime12(b.startTime)}`}
                                 onClick={() => setAsking(b.id)}
                               >
                                 Cancelar
@@ -195,7 +196,7 @@ export function MyBookings() {
                             <div>
                               <div className="series-title">Serie semanal · {first.courtName}</div>
                               <div className="muted small">
-                                {notStarted.length} {notStarted.length === 1 ? "próxima" : "próximas"} · {first.startTime}–{first.endTime}
+                                {notStarted.length} {notStarted.length === 1 ? "próxima" : "próximas"} · {formatTime12(first.startTime)} – {formatTime12(first.endTime)}
                               </div>
                             </div>
                             {notStarted.length === 0 ? null : asking === key ? (
@@ -212,7 +213,7 @@ export function MyBookings() {
                               <button
                                 type="button"
                                 className="btn btn-secondary"
-                                aria-label={`Cancelar las próximas de la serie ${first.courtName} ${first.startTime}`}
+                                aria-label={`Cancelar las próximas de la serie ${first.courtName} ${formatTime12(first.startTime)}`}
                                 onClick={() => setAsking(key)}
                               >
                                 Cancelar las próximas
@@ -252,7 +253,7 @@ function BookingCard({ b, now, children }: { b: Booking; now: Date; children?: R
       <div className="booking-main">
         <div className="booking-name">{b.courtName}</div>
         <div className="booking-when">
-          <span className="cap-inline">{longDate(b.date)}</span> · {b.startTime}–{b.endTime} · {durationLabel(b.durationMin)}
+          <span className="cap-inline">{formatLongDate(b.date)}</span> · {formatTime12(b.startTime)} – {formatTime12(b.endTime)} · {durationLabel(b.durationMin)}
         </div>
         <div className="booking-meta">
           <span className={`badge badge-${st.tone}`}>{st.label}</span>

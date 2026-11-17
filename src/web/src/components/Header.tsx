@@ -21,10 +21,12 @@ export function Header() {
             <GridIcon />
             <span>Disponibilidad</span>
           </NavLink>
-          <NavLink to="/mis-reservas" className="navlink">
-            <CalendarIcon />
-            <span>Mis reservas</span>
-          </NavLink>
+          {user && (
+            <NavLink to="/mis-reservas" className="navlink">
+              <CalendarIcon />
+              <span>Mis reservas</span>
+            </NavLink>
+          )}
           {user?.role === "admin" && (
             <NavLink to="/admin" className="navlink">
               <GridIcon />

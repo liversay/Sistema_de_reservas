@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { priceFor, type Duration } from "../shared";
 import type { CourtAvailability, SlotState } from "../api";
+import { formatTime12 } from "../format";
 import { CourtIcon } from "./CourtIcon";
 
 export interface Selection {
@@ -23,6 +24,11 @@ const STATE_LABEL: Record<SlotState, string> = {
   cerrado: "cerrado",
   pasado: "ya pasó",
 };
+
+/** Encabezado de columna: "8:00 p. m." en las horas en punto; las medias horas sin etiqueta para que quepa. */
+function headLabel(time: string): string {
+  return time.endsWith(":00") ? formatTime12(time) : "";
+}
 
 export function courtMeta(c: CourtAvailability): string {
   if (c.sport === "futbol") return c.format === "7vs7" ? "Fútbol 7" : "Fútbol 5";
@@ -77,7 +83,7 @@ export function AvailabilityGrid({
         </div>
         {columns.map(([slot, time]) => (
           <div key={slot} className={`time-head${time.endsWith(":00") ? " is-hour" : ""}`} aria-hidden="true">
-            {time}
+            {headLabel(time)}
           </div>
         ))}
         {courts.map((c) => {
@@ -106,8 +112,8 @@ export function AvailabilityGrid({
                       data-slot={key}
                       className={`cell ${state}${inSel ? " sel-clash" : ""}${time.endsWith(":00") ? " hour-start" : ""}`}
                       role="img"
-                      aria-label={`${c.name} ${time} ${STATE_LABEL[state]}`}
-                      title={`${time} · ${STATE_LABEL[state]}`}
+                      aria-label={`${c.name} ${formatTime12(time)} ${STATE_LABEL[state]}`}
+                      title={`${formatTime12(time)} · ${STATE_LABEL[state]}`}
                     />
                   );
                 }
@@ -117,12 +123,15 @@ export function AvailabilityGrid({
                     type="button"
                     data-slot={key}
                     className={`cell free${inSel ? (fits ? " sel" : " sel-bad") : ""}${isStart ? " sel-start" : ""}${time.endsWith(":00") ? " hour-start" : ""}`}
-                    aria-label={`${c.name} ${time} libre`}
+                    aria-label={`${c.name} ${formatTime12(time)} libre`}
                     aria-pressed={isStart}
-                    title={`${time} · libre`}
+                    title={`${formatTime12(time)} · libre`}
                     onClick={() => onPick({ courtId: c.courtId, slot })}
                   >
-                    {isStart && <span className="cell-time">{time}</span>}
+                    {isStart && <span className="cell-time" aria-hidden="true">
+                        <span>{formatTime12(time).split(" ")[0]}</span>
+                        <small>{formatTime12(time).split(" ").slice(1).join(" ")}</small>
+                      </span>}
                   </button>
                 );
               })}

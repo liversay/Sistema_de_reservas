@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError } from "../api";
 import { safeNext, useAuth } from "../auth";
 import { AlertIcon } from "../components/Icons";
+import { useLoyaltyPct } from "../loyalty";
 
 export function Login() {
   const { setUser } = useAuth();
@@ -35,7 +36,7 @@ export function Login() {
   }
 
   return (
-    <AuthShell title="Ingresa para reservar" subtitle="Usa tu cuenta del complejo. Te devolvemos a tu selección.">
+    <AuthShell title="Club de socios" subtitle="Ingresa con tu cuenta de socio. Te devolvemos a tu selección.">
       <form className="form" onSubmit={submit} noValidate>
         {error && (
           <p className="form-error" role="alert">
@@ -68,6 +69,17 @@ export function Login() {
   );
 }
 
+/** CR-02 / RN-16: beneficio de socios con el % configurado en el backoffice. */
+export function Benefit() {
+  const pct = useLoyaltyPct();
+  if (!pct) return null;
+  return (
+    <p className="benefit" data-testid="beneficio-socios">
+      Los socios tienen {pct} % de descuento en cada reserva.
+    </p>
+  );
+}
+
 export function AuthShell({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
   return (
     <>
@@ -78,7 +90,10 @@ export function AuthShell({ title, subtitle, children }: { title: string; subtit
         </div>
       </section>
       <main className="page page-auth" id="contenido">
-        <div className="card auth-card">{children}</div>
+        <div className="card auth-card">
+          <Benefit />
+          {children}
+        </div>
       </main>
     </>
   );

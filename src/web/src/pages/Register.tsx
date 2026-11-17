@@ -67,7 +67,7 @@ export function Register() {
   }
 
   return (
-    <AuthShell title="Crea tu cuenta" subtitle="Solo una vez: después reservas en dos toques.">
+    <AuthShell title="Club de socios" subtitle="Crea tu cuenta de socio: solo una vez, y tus reservas llevan descuento.">
       <form className="form" onSubmit={submit} noValidate>
         {error && (
           <p className="form-error" role="alert">

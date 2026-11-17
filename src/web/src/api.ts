@@ -1,5 +1,10 @@
 import type { Duration, Sport } from "./shared";
 
+export interface Guest {
+  name: string;
+  phone: string;
+}
+
 export type SlotState = "libre" | "ocupado" | "cerrado" | "pasado";
 export type Prices = Record<"60" | "90" | "120", number>;
 
@@ -29,6 +34,11 @@ export interface Booking {
   endTime: string;
   durationMin: Duration;
   price: number;
+  /** CR-02: precio antes del descuento de socios y % aplicado (0 si fue sin sesión). */
+  basePrice?: number;
+  discountPct?: number;
+  /** Presente en reservas hechas sin cuenta. */
+  guest?: { name: string; phone: string };
   status: "confirmada" | "cancelada" | "no_show";
   payment: { status: "pendiente" | "pagado"; amount?: number };
   createdAt: string;
@@ -36,7 +46,7 @@ export interface Booking {
   seriesId?: string;
 }
 
-export type PaymentMethod = "efectivo" | "transferencia" | "tarjeta";
+export type PaymentMethod = "efectivo" | "transferencia" | "tarjeta" | "yappy";
 
 export interface ScheduleDay {
   weekday: number; // 0 = lunes … 6 = domingo
@@ -64,7 +74,6 @@ export interface AdminBooking extends Omit<Booking, "payment"> {
   payment: { status: "pendiente" | "pagado"; amount?: number; method?: PaymentMethod; paidAt?: string; paidBy?: string };
   createdBy: "client" | "admin";
   user?: { name: string; phone: string };
-  guest?: { name: string; phone: string };
   played: boolean;
 }
 
@@ -114,9 +123,11 @@ export const api = {
   register: (input: { name: string; email: string; phone: string; password: string }) =>
     request<User>("/auth/register", { method: "POST", body: input }),
   logout: () => request<void>("/auth/logout", { method: "POST" }),
-  book: (input: { courtId: string; date: string; startTime: string; durationMin: Duration }) =>
+  loyalty: () => request<{ discountPct: number }>("/settings/loyalty"),
+  /** CR-02: sin sesión se envía `guest`; con sesión de cliente la API lo ignora. */
+  book: (input: { courtId: string; date: string; startTime: string; durationMin: Duration; guest?: Guest }) =>
     request<Booking>("/bookings", { method: "POST", body: input }),
-  bookSeries: (input: { courtId: string; date: string; startTime: string; durationMin: Duration; weeks: number }) =>
+  bookSeries: (input: { courtId: string; date: string; startTime: string; durationMin: Duration; weeks: number; guest?: Guest }) =>
     request<{ seriesId: string; bookings: Booking[] }>("/bookings/series", { method: "POST", body: input }),
   cancelFuture: (seriesId: string) =>
     request<{ cancelled: number }>(`/bookings/series/${encodeURIComponent(seriesId)}/cancel-future`, { method: "POST" }),
