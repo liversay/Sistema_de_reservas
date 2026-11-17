@@ -27,7 +27,7 @@ mensaje de cada campo inválido. Mensaje de choque exacto: `"Ese horario ya fue 
 - **Usuario** (nunca incluye `passwordHash`): `{ id, name, email, phone, role: "client"|"admin" }`.
 - **Reserva**: `{ id, courtId, courtName, date, startTime, endTime, durationMin, spaceIds, price, status: "confirmada"|"cancelada"|"no_show", payment: { status: "pendiente"|"pagado", amount?, method?, paidAt?, paidBy? }, createdBy: "client"|"admin", user?: { name, phone }, guest?: { name, phone }, createdAt }`.
   `startTime`/`endTime` se derivan de `startSlot` y `durationMin`. Exactamente uno de `user` (reserva de cliente) o `guest` (reserva de admin para invitado). En **todas** las respuestas de admin que listan o devuelven reservas (`GET /api/admin/bookings`, `GET /api/admin/payments` y las mutaciones) se añade `played: boolean` (derivado con `hasEnded` y `now`).
-- **Cancha**: `{ id, name, sport, format?, spaceIds, active, prices: { "60", "90", "120" }, schedule: [{ weekday: 0..6, open, close, closed }] }`. En el cuerpo de `POST`/`PUT`: `prices` con las tres claves `"60"`, `"90"`, `"120"` y números positivos; cada item de `schedule` con `weekday` entero 0–6, `open` y `close` `"HH:MM"` y `closed` booleano; `open < close`, si no `400`.
+- **Cancha**: `{ id, name, sport, format?, spaceIds, active, prices: { "60", "90", "120" }, schedule: [{ weekday: 0..6, open, close, closed }] }`. En el cuerpo de `POST`/`PUT`: `prices` con las tres claves `"60"`, `"90"`, `"120"` y números positivos; cada item de `schedule` con `weekday` entero 0–6, `open` y `close` `"HH:MM"` y `closed` booleano; `open < close` solo se exige cuando `closed = false` (si no, `400`); dos items con el mismo `weekday` → `400`.
 - **Ids sembrados de cancha:** `media-a`, `media-b`, `completa`, `padel-1`, `basquet-1`.
 - **Orden de validación en rutas que crean reservas:** sesión/rol (401/403) → cuerpo Zod (400) → cancha existe (404) → regla de negocio (422: inactiva, fuera de horario, pasado) → choque (409). La capa Zod de la ruta devuelve `400` ante `startTime` o `durationMin` mal formados antes de llegar al servicio (que de otro modo respondería `422`).
 - **Orden de validación en pago y no-show:** sesión/rol (401/403) → cuerpo Zod (400, solo pago) → reserva existe (404) → estado (409: no está `confirmada`, o ya pagada) → reloj (422: aún no terminó). Un pago o no-show sobre una reserva cancelada o `no_show` que además no terminó responde `409`, no `422`.
@@ -74,7 +74,7 @@ trata como sin sesión (`401`).
 | `GET /api/admin/courts` | — | `200 [cancha]` (incluye inactivas) | CA-14 |
 | `GET /api/admin/courts/:id` | — | `200 cancha`; `404` | CA-14 |
 | `POST /api/admin/courts` | `{ id, name, sport, format?, spaceIds, active, prices, schedule }`; `id` obligatorio en kebab-case `/^[a-z0-9-]+$/` | `201` cancha; `400` (incluye `id` inválido); `409` si el `id` ya existe | CA-14 |
-| `PUT /api/admin/courts/:id` | mismo cuerpo | `200` cancha; `400`; `404`. Reemplazo completo | CA-14 |
+| `PUT /api/admin/courts/:id` | mismo cuerpo; `id` es opcional y, si viene, debe ser igual a `:id` (el id de la cancha es inmutable) | `200` cancha; `400` (incluye `id` distinto de `:id`); `404`. Reemplazo completo |
 | `DELETE /api/admin/courts/:id` | — | `204`; `404`; `409` si la cancha tiene reservas (solo desactivarla) | CA-14 |
 
 Notas de cancha: `spaceIds` ≥ 1. `POST` y `PUT` aceptan `spaceIds` nuevos y los **insertan en
