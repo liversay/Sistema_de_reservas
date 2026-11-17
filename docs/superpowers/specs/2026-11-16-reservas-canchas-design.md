@@ -5,10 +5,9 @@ Repositorio: `git@github.com:liversay/Sistema_de_reservas.git`
 
 ## 1. Intención y por qué
 
-Proyecto 2 de Tópicos Especiales II (Prof. Regis Rivera): un sistema de reservas especializado,
-construido siguiendo **ODD → SDD → código → pruebas → valor al usuario**. El profesor evalúa el
-**proceso** (especificaciones, trazabilidad, Git, pruebas, uso documentado de IA, manejo de un
-cambio de requerimiento), no la herramienta. La opción elegida del PDF es **Cancha deportiva**.
+Un sistema de reservas especializado para canchas deportivas, construido siguiendo
+**ODD → SDD → código → pruebas → valor al usuario**, con especificaciones trazables, Git, pruebas y
+uso documentado de IA.
 
 ### ODD (propuesta, a validar en `specs/outcomes.md`)
 
