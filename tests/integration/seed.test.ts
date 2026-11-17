@@ -32,7 +32,7 @@ describe("seed", () => {
   });
 
   test("CR-02: siembra settings/loyalty = 10 sin pisar un valor editado", async () => {
-    expect(await t.db.collection("settings").findOne({ _id: "loyalty" as never })).toEqual({ _id: "loyalty", discountPct: 10 });
+    expect(await t.db.collection("settings").findOne({ _id: "loyalty" as never })).toEqual({ _id: "loyalty", discountPct: 10 } as never);
     await t.db.collection("settings").updateOne({ _id: "loyalty" as never }, { $set: { discountPct: 20 } });
     await seed(t.db);
     expect((await t.db.collection("settings").findOne({ _id: "loyalty" as never }))?.discountPct).toBe(20);
