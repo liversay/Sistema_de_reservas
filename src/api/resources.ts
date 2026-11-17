@@ -24,6 +24,8 @@ export async function bookingResources(db: Db, bookings: Booking[], now: Date, o
       durationMin: b.durationMin,
       spaceIds: b.spaceIds,
       price: b.price,
+      basePrice: b.basePrice ?? b.price,
+      discountPct: b.discountPct ?? 0,
       status: b.status,
       payment: opts.admin ? b.payment : (({ paidBy: _paidBy, ...p }) => p)(b.payment),
       createdBy: b.createdBy,

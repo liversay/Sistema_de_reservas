@@ -30,4 +30,11 @@ describe("seed", () => {
     expect(await t.db.collection("users").countDocuments({ email: "admin@canchas.local" })).toBe(1);
     expect(await t.db.collection("courts").countDocuments()).toBe(5);
   });
+
+  test("CR-02: siembra settings/loyalty = 10 sin pisar un valor editado", async () => {
+    expect(await t.db.collection("settings").findOne({ _id: "loyalty" as never })).toEqual({ _id: "loyalty", discountPct: 10 });
+    await t.db.collection("settings").updateOne({ _id: "loyalty" as never }, { $set: { discountPct: 20 } });
+    await seed(t.db);
+    expect((await t.db.collection("settings").findOne({ _id: "loyalty" as never }))?.discountPct).toBe(20);
+  });
 });

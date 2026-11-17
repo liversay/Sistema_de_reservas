@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { Db } from "mongodb";
 import { MongoServerError } from "mongodb";
-import { CourtInput, hasEnded, type Booking, type Court, type PaymentMethod } from "@canchas/shared";
+import { CourtInput, addDays, hasEnded, round2, toSlot, weekdayOf, type Booking, type Court, type PaymentMethod } from "@canchas/shared";
 import { ConflictError, NotFoundError, RuleError } from "../errors";
 import type { Ctx } from "../bookings/service";
 
@@ -142,4 +142,78 @@ export async function deleteCourt(db: Db, id: string): Promise<void> {
     throw new ConflictError("La cancha tiene reservas; desactívala en su lugar.");
   }
   await db.collection<Court>("courts").deleteOne({ _id: id });
+}
+
+// ---- CR-02: tablero ----
+
+/** Reservas no canceladas por día en [from, to]; solo días con reservas, ascendente. */
+export async function bookingCalendar(db: Db, from: string, to: string): Promise<{ date: string; count: number }[]> {
+  const rows = await db
+    .collection<Booking>("bookings")
+    .aggregate<{ _id: string; count: number }>([
+      { $match: { date: { $gte: from, $lte: to }, status: { $ne: "cancelada" } } },
+      { $group: { _id: "$date", count: { $sum: 1 } } },
+      { $sort: { _id: 1 } },
+    ])
+    .toArray();
+  return rows.map((r) => ({ date: r._id, count: r.count }));
+}
+
+const METHODS = ["efectivo", "transferencia", "tarjeta", "yappy"] as const;
+
+/** Indicadores de cobros y ocupación del rango (CA-24). Las fechas son las de la reserva. */
+export async function paymentsSummary(db: Db, from: string, to: string, now: Date) {
+  const rows = await db
+    .collection<Booking>("bookings")
+    .find({ date: { $gte: from, $lte: to } })
+    .toArray();
+  const byMethod: Record<(typeof METHODS)[number], number> = { efectivo: 0, transferencia: 0, tarjeta: 0, yappy: 0 };
+  const byDay = new Map<string, number>();
+  let collected = 0;
+  let pending = 0;
+  let pendingCount = 0;
+  let bookings = 0;
+  let cancelled = 0;
+  let noShow = 0;
+  let reservedBlocks = 0;
+  for (const b of rows) {
+    if (b.status === "cancelada") {
+      cancelled++;
+      continue;
+    }
+    bookings++;
+    reservedBlocks += b.durationMin / 30;
+    if (b.status === "no_show") noShow++;
+    if (b.payment.status === "pagado") {
+      const amount = b.payment.amount ?? 0;
+      collected += amount;
+      if (b.payment.method) byMethod[b.payment.method] += amount;
+      byDay.set(b.date, (byDay.get(b.date) ?? 0) + amount);
+    } else if (b.status === "confirmada" && hasEnded(b.date, b.startSlot, b.durationMin, now)) {
+      pending += b.price;
+      pendingCount++;
+    }
+  }
+
+  const courts = await db.collection<Court>("courts").find({ active: true }).toArray();
+  let openBlocks = 0;
+  for (let d = from; d <= to; d = addDays(d, 1)) {
+    const wd = weekdayOf(d);
+    for (const c of courts) {
+      const day = c.schedule.find((s) => s.weekday === wd);
+      if (day && !day.closed) openBlocks += Math.max(0, toSlot(day.close) - toSlot(day.open));
+    }
+  }
+
+  return {
+    collected: round2(collected),
+    pending: round2(pending),
+    pendingCount,
+    bookings,
+    cancelled,
+    noShow,
+    byMethod: Object.fromEntries(METHODS.map((m) => [m, round2(byMethod[m])])) as typeof byMethod,
+    byDay: [...byDay].sort(([a], [b]) => a.localeCompare(b)).map(([date, c]) => ({ date, collected: round2(c) })),
+    occupancyPct: openBlocks === 0 ? 0 : Math.round((reservedBlocks / openBlocks) * 1000) / 10,
+  };
 }

@@ -33,7 +33,7 @@ describe("CR-01 crear serie (CA-15)", () => {
     expect(r.json.seriesId).toMatch(/^[0-9a-f-]{36}$/);
     expect(r.json.bookings.map((b: any) => b.date)).toEqual(["2026-11-26", "2026-12-03", "2026-12-10", "2026-12-17"]);
     for (const b of r.json.bookings) {
-      expect(b).toMatchObject({ seriesId: r.json.seriesId, price: 50, status: "confirmada", createdBy: "client", user: { name: "Ana Pérez" } });
+      expect(b).toMatchObject({ seriesId: r.json.seriesId, price: 45, basePrice: 50, discountPct: 10, status: "confirmada", createdBy: "client", user: { name: "Ana Pérez" } });
       expect(b.payment.paidBy).toBeUndefined();
     }
     expect(await count({ seriesId: r.json.seriesId })).toBe(4);

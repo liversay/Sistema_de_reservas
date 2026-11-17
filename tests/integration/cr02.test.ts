@@ -207,7 +207,7 @@ describe("CR-02 calendar y summary (base limpia)", () => {
     await t2.call("POST", `/api/admin/bookings/${b.json.id}/payment`, { cookie: adm, body: { amount: 45, method: "yappy" } });
     await t2.call("POST", `/api/admin/bookings/${c.json.id}/payment`, { cookie: adm, body: { amount: 20, method: "tarjeta" } });
     await t2.call("POST", `/api/admin/bookings/${d.json.id}/no-show`, { cookie: adm });
-    await mk("completa", "2026-11-23", "10:00", 120); // futura
+    await mk("completa", "2026-11-23", "17:00", 120); // futura
   });
   afterAll(async () => {
     await t2.drop();

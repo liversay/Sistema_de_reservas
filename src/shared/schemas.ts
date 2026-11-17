@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isRealDate } from "./time";
+import { daysBetween, isRealDate } from "./time";
 
 const date = z.string().refine(isRealDate, "Fecha inválida (YYYY-MM-DD)");
 const time = z.string().regex(/^([01]\d|2[0-3]):(00|30)$/, "Hora inválida (HH:MM en bloques de 30 min)");
@@ -42,7 +42,7 @@ export type SeriesInput = z.infer<typeof SeriesInput>;
 
 export const PaymentInput = z.object({
   amount: z.number().positive(),
-  method: z.enum(["efectivo", "transferencia", "tarjeta"]),
+  method: z.enum(["efectivo", "transferencia", "tarjeta", "yappy"]),
 });
 
 const ScheduleDaySchema = z.object({
@@ -65,3 +65,18 @@ export const CourtInput = z.object({
   }),
   schedule: z.array(ScheduleDaySchema),
 });
+
+/** CR-02 / RN-16: % de descuento de socio. */
+export const LoyaltyInput = z.object({
+  discountPct: z.number().int("Debe ser entero").min(0, "Mínimo 0").max(50, "Máximo 50"),
+});
+export const DEFAULT_LOYALTY_PCT = 10;
+
+/** CR-02: rango from/to (YYYY-MM-DD) de calendar y summary; from ≤ to y a lo sumo 62 días entre ambos. */
+export const DateRangeQuery = z
+  .object({ from: date, to: date })
+  .superRefine((r, ctx) => {
+    if (!isRealDate(r.from) || !isRealDate(r.to)) return;
+    if (r.from > r.to) ctx.addIssue({ code: "custom", path: ["from"], message: "from debe ser anterior o igual a to" });
+    else if (daysBetween(r.from, r.to) > 62) ctx.addIssue({ code: "custom", path: ["to"], message: "El rango máximo es de 62 días" });
+  });

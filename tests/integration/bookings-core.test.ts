@@ -35,7 +35,8 @@ describe("createBooking", () => {
 
   test("precio guardado: Completa 90 min = 140; copia spaceIds", async () => {
     const b = await createBooking(t.ctx(), input("completa", "17:00", 90), { userId: "u1" }, "client");
-    expect(b.price).toBe(140);
+    expect(b.price).toBe(126); // CR-02: owner con userId, 10 % de socio
+    expect(b.basePrice).toBe(140);
     expect(b.spaceIds.sort()).toEqual(["futbol-media-a", "futbol-media-b"]);
     expect(b.status).toBe("confirmada");
     expect(b.payment.status).toBe("pendiente");

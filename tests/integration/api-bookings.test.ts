@@ -25,7 +25,9 @@ describe("reservas de cliente", () => {
       startTime: "18:00",
       endTime: "19:00",
       durationMin: 60,
-      price: 50,
+      price: 45, // CR-02: cliente con sesión, 10 % de socio sobre 50
+      basePrice: 50,
+      discountPct: 10,
       status: "confirmada",
       payment: { status: "pendiente" },
       createdBy: "client",
@@ -40,7 +42,7 @@ describe("reservas de cliente", () => {
 
   test("el cliente no puede forzar el precio; validación 400, 404 cancha, 422 reglas", async () => {
     const r = await t.call("POST", "/api/bookings", { cookie: ana, body: body("19:00", { price: 1 }) });
-    expect(r.json.price).toBe(50);
+    expect(r.json.price).toBe(45); // 50 con 10 % de socio (CR-02); no el 1 enviado
     expect((await t.call("POST", "/api/bookings", { cookie: ana, body: body("19:15") })).status).toBe(400);
     expect((await t.call("POST", "/api/bookings", { cookie: ana, body: body("20:00", { durationMin: 45 }) })).status).toBe(400);
     expect((await t.call("POST", "/api/bookings", { cookie: ana, body: body("20:00", { courtId: "nada" }) })).status).toBe(404);
