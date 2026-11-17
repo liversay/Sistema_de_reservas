@@ -86,4 +86,4 @@ Los roles rotan por ciclo (detalle en [`specs/implementation-plan.md`](specs/imp
 
 ## Estado
 
-Ciclos 1 a 3 completados y verificados localmente: 90 pruebas `bun test` y 20 e2e en verde, incluidas las reservas recurrentes (CR-01, CA-15…CA-18). Pendiente: publicar las ramas, abrir los PR y verificar el CI en `main`. Historial en [`CHANGELOG.md`](CHANGELOG.md).
+Ciclos 1 a 3 completados y publicados: PRs #10 y #15–#26 mergeados en `main`, con el CI de GitHub Actions (`bun test`) en verde en cada PR. Pruebas: 91 `bun test` y 20 e2e, incluidas las reservas recurrentes (CR-01, CA-15…CA-18). Historial en [`CHANGELOG.md`](CHANGELOG.md).

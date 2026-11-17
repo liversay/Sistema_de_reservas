@@ -17,7 +17,7 @@ bunx playwright test      # o: bun run e2e
 
 `playwright.config.ts` arranca `bun run e2e:server` (`scripts/e2e-server.ts`): **borra la BD `canchas_e2e`**, la deja sembrada desde cero (la siembra la API al arrancar) y levanta API (3000) y Vite (5173). Es fresca en cada corrida y no toca la BD `canchas` de desarrollo. Los puertos 3000 y 5173 deben estar libres (`reuseExistingServer: false`). `workers: 1`, solo Chromium, archivos `tests/e2e/*.e2e.ts` (nunca `.spec.ts`, para que `bun test` no los recoja).
 
-**Reservas en el pasado (CA-10, CA-12, CA-13, CA-07 422):** la API rechaza turnos pasados (RN-04) y el reloj del servidor es real, así que el fixture `seedPastBooking` (`tests/e2e/fixtures.ts`) escribe directo en MongoDB `canchas_e2e` una reserva `confirmada` con pago `pendiente` y sus `slot_locks`, con la misma forma que `createBooking` (`src/api/bookings/service.ts`). Todo lo demás pasa por la UI o la API real.
+**Reservas en el pasado (CA-10, CA-12, CA-13, CA-07 422):** la API rechaza turnos pasados (RN-05) y el reloj del servidor es real, así que el fixture `seedPastBooking` (`tests/e2e/fixtures.ts`) escribe directo en MongoDB `canchas_e2e` una reserva `confirmada` con pago `pendiente` y sus `slot_locks`, con la misma forma que `createBooking` (`src/api/bookings/service.ts`). Todo lo demás pasa por la UI o la API real.
 
 Las fechas son relativas a hoy (`dayOffset`), dentro de la tira de 7 días; cada prueba usa una combinación cancha/hora distinta para no depender del orden.
 
@@ -90,5 +90,5 @@ Recorrido completo del cambio de requerimiento CR-01 (reservas recurrentes): cam
 **Enlaces de revisión**
 
 - Issues: [#11 specs](https://github.com/liversay/Sistema_de_reservas/issues/11), [#12 código](https://github.com/liversay/Sistema_de_reservas/issues/12), [#13 pruebas y cierre](https://github.com/liversay/Sistema_de_reservas/issues/13)
-- PR: pendiente de publicación. <!-- PLACEHOLDER: reemplazar por los enlaces a los PR de #11, #12 y #13 cuando se publiquen las ramas -->
-- CI verde en `main`: **pendiente** (nada se ha publicado aún; verificar el check de GitHub Actions tras el merge).
+- PR: spec [#23](https://github.com/liversay/Sistema_de_reservas/pull/23) (Closes #11) → código [#24](https://github.com/liversay/Sistema_de_reservas/pull/24) (Closes #12) → pruebas y cierre [#25](https://github.com/liversay/Sistema_de_reservas/pull/25) (Closes #13); correcciones de la revisión final [#26](https://github.com/liversay/Sistema_de_reservas/pull/26).
+- CI verde: el check de GitHub Actions pasó en cada PR antes del merge (#17–#26). Nota: el primer run falló porque `ubuntu-latest` (26.04) no tiene paquetes de MongoDB 8; se fijó `ubuntu-24.04` en #17.

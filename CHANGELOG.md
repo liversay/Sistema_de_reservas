@@ -8,7 +8,7 @@
 - **CR-01 Reservas recurrentes (código):** series semanales de 2 a 8 semanas, todo-o-nada con `409`/`422` que nombran la fecha, `seriesId`, «cancelar las próximas», rutas de cliente y admin, y UI «Repetir cada semana» con Mis reservas agrupado por serie (#12).
 - **CR-01 Pruebas y cierre:** `tests/e2e/series.e2e.ts` (CA-15…CA-18), fixture `seedPastBooking` con `seriesId`, sección «Evidencia CR-01» en `docs/testing.md` y README final. 90 `bun test` y 20 e2e en verde (#13).
 - **Correcciones de la revisión final:** gestión de series en el backoffice (badge «Serie» y «Cancelar las próximas de la serie»), horas ya iniciadas ocultas al crear reserva para hoy, minutos de horario `00|30`, «Cobrados» incluye todo lo pagado (con «Cancelada»), `spaceIds` repetidos rechazados, mensaje sin canchas, y README con limitaciones conocidas (#14).
-- Pendiente: publicar las ramas, abrir los PR y verificar el CI en `main`.
+- Publicado: PRs #15–#26 mergeados en `main` con CI en verde; CI fijado a `ubuntu-24.04` (#17).
 
 ## [Ciclo 2]
 
