@@ -2,6 +2,12 @@
 
 ## [Sin publicar]
 
+## [Ciclo 4]
+
+### Cambio solicitado
+
+- **CR-02 Reserva sin cuenta, fidelidad, horizonte y tablero (specs):** RF-17…RF-22, RN-14 (horizonte de 30 días), RN-15 (reserva sin cuenta con `guest`), RN-16 (club de socios con % configurable) y RN-05 también en la interfaz, CA-19…CA-25, sesión opcional y endpoints `settings/loyalty`, `bookings/calendar` y `payments/summary` en `api.md`, `settings`, `basePrice`, `discountPct` y método `yappy` en `data-model.md`, ciclo 4 y flujo CR-02 en `implementation-plan.md` y ADR-006. Modifica RF-04, RN-07, RN-09, CA-09 y CA-15 (marcado en cada uno) (#28).
+
 ## [Ciclo 3]
 
 - **CR-01 Reservas recurrentes (specs):** RF-15/RF-16, RN-12/RN-13 (todo-o-nada y ocurrencias independientes), CA-15…CA-18, endpoints de series en `api.md`, `bookings.seriesId?` e índice en `data-model.md`, ciclo 3 en `implementation-plan.md` y ADR-005 (#11).

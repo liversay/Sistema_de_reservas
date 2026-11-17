@@ -11,6 +11,7 @@ Los roles rotan por ciclo.
 | 1 | ODD + specs, monorepo, DB local, modelo, disponibilidad + regla anti-choque | liversay | aaronbatistaa | Diegoalevq |
 | 2 | Reserva del cliente, cuentas, Mis reservas, backoffice | aaronbatistaa | Diegoalevq | liversay |
 | 3 | Cambio de requerimiento (reservas recurrentes), pagos, README, cierre | Diegoalevq | liversay | aaronbatistaa |
+| 4 | Cambio de requerimiento CR-02 (reserva sin cuenta, fidelidad, horizonte, tablero); la rotación vuelve a empezar | liversay | aaronbatistaa | Diegoalevq |
 
 ## Ciclo 1 (completado ✔)
 
@@ -56,6 +57,29 @@ Estado: ✔ tareas 10 a 12 implementadas y verificadas localmente (90 `bun test`
 Los ciclos 1–2 no dejaron nada preparado para series (sin `seriesId`), para que el cambio sea real.
 Los cambios de este ciclo están marcados con `CR-01` en cada documento.
 
+## Ciclo 4 (cambio de requerimiento CR-02, en curso)
+
+Estado: spec en revisión (tarea 13); el código y las pruebas siguen pendientes. Las issues del ciclo 4 llevan la etiqueta `ciclo-4`. Las ramas de las tareas 14 a 17 son las previstas.
+
+| Tarea | Responsable (rol) | Rama | Issue | Alcance |
+|---|---|---|---|---|
+| 13 | liversay (Spec) | `docs/28-cr-02` | [#28](https://github.com/liversay/Sistema_de_reservas/issues/28) | CR-02 en las specs: RF-17…RF-22, RN-14…RN-16, CA-19…CA-25, api, modelo, plan, ADR-006 |
+| 14 | aaronbatistaa (Dev) | `feat/29-api-cr-02` | [#29](https://github.com/liversay/Sistema_de_reservas/issues/29) | API: reserva sin sesión, descuento, horizonte, `settings/loyalty`, `calendar`, `payments/summary`, método `yappy` |
+| 15 | aaronbatistaa (Dev) | `feat/30-web-cliente-cr-02` | [#30](https://github.com/liversay/Sistema_de_reservas/issues/30) | Web cliente: horas en 12 h, 31 días, sin horas pasadas, reservar sin cuenta, club de socios, login sin pegarse al encabezado |
+| 16 | aaronbatistaa (Dev) | `feat/31-backoffice-tablero-cr-02` | [#31](https://github.com/liversay/Sistema_de_reservas/issues/31) | Backoffice: tablero Reservas/Pagos, tarjeta de detalle, indicadores, ajuste del % de socios |
+| 17 | Diegoalevq (QA) | `test/32-cr-02` | [#32](https://github.com/liversay/Sistema_de_reservas/issues/32) | e2e actualizados y `cr02.e2e.ts` (CA-19…CA-25), evidencia en `docs/testing.md`, README y CHANGELOG |
+
+### Flujo del cambio CR-02
+
+1. **Cambio solicitado** (2026-11-17): reservar sin cuenta (nombre y teléfono), login como club de socios con % de descuento configurable, horizonte de 1 mes, horas en 12 h, sin reservar horas pasadas, y backoffice con tablero calendario (Reservas | Pagos con indicadores) → issue #28.
+2. **Actualizar la spec:** RF-17…RF-22 en `requirements.md`, RN-14…RN-16 (y RN-05 también en la UI) en `business-rules.md`. Reglas anteriores que cambian (RF-04 «autenticado», «la cuenta es necesaria para reservar», CA-09 «reservar sin sesión → 401», método de pago sin `yappy`) quedan marcadas como modificadas por CR-02 en lugar de borrarse.
+3. **Actualizar los criterios de aceptación:** CA-19…CA-25 y su prueba prevista.
+4. **Actualizar contratos y plan:** `api.md` (sesión opcional con `guest`, `settings/loyalty`, `calendar`, `payments/summary`, `yappy`, horizonte), `data-model.md` (`settings`, `basePrice`, `discountPct`), este plan, ADR-006 y CHANGELOG.
+5. **Código** (#29, #30, #31) → **pruebas** (#32) → **resultados** en `docs/testing.md` («Evidencia CR-02»).
+
+Decisiones tomadas con el usuario el 2026-11-17: el descuento de socios es un % configurable en el backoffice (por defecto 10, rango 0–50) que solo se aplica a reservas hechas con sesión; los métodos de pago son efectivo, transferencia, tarjeta y yappy; reservar sin cuenta exige nombre y teléfono; el horizonte de 30 días aplica a cada ocurrencia de una serie; las reservas canceladas se listan bajo el tablero del admin y no ocupan bloques.
+Los cambios de este ciclo están marcados con `CR-02` en cada documento.
+
 ## Trazabilidad
 
 RF → RN → CA → prueba. La tabla CA → prueba vive en `docs/testing.md`.
@@ -65,3 +89,4 @@ RF → RN → CA → prueba. La tabla CA → prueba vive en `docs/testing.md`.
 | 1 ✔ | CA-01, CA-03 (cálculo), CA-04, CA-05, CA-06 a nivel de dominio y base de datos |
 | 2 | CA-01…CA-14 en API y e2e |
 | 3 *(CR-01)* | CA-15…CA-18 en API y e2e ✔ |
+| 4 *(CR-02)* | CA-19…CA-25 en API y e2e (pendiente) |
