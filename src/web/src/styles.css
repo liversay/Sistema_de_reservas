@@ -983,6 +983,9 @@ button:disabled {
 
 /* ---------- Móvil ---------- */
 @media (max-width: 960px) {
+  .bar {
+    flex-wrap: wrap;
+  }
   .layout {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1116,4 +1119,86 @@ button:disabled {
     transition: none !important;
     animation: none !important;
   }
+}
+
+/* ---------- CR-01: reservas recurrentes ---------- */
+.repeat {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 14px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line-soft);
+  border-radius: 14px;
+  background: #fafbf9;
+}
+.repeat-check,
+.repeat-weeks {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 15px;
+}
+.repeat-check input {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--green);
+}
+.repeat-weeks select {
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 0 10px;
+  font: inherit;
+  color: var(--ink);
+}
+.repeat-dates {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 13px;
+}
+.repeat-dates li {
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid var(--line-soft);
+}
+.repeat-total {
+  margin: 0;
+  font-size: 14px;
+}
+.bar .repeat {
+  flex: 1 0 100%;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 0;
+  padding: 6px 10px;
+}
+.series-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #f4f8f3;
+}
+.series-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding: 2px 6px;
+}
+.series-title {
+  font-family: var(--display);
+  font-weight: 800;
 }

@@ -3,6 +3,7 @@ import type { CourtAvailability } from "../api";
 import { durationLabel, longDate } from "../dates";
 import { courtMeta, shortName } from "./AvailabilityGrid";
 import { AlertIcon } from "./Icons";
+import { RepeatOption } from "./RepeatOption";
 
 interface Props {
   court: CourtAvailability | undefined;
@@ -12,6 +13,10 @@ interface Props {
   fits: boolean;
   loggedIn: boolean;
   submitting: boolean;
+  repeat: boolean;
+  weeks: number;
+  onRepeat: (v: boolean) => void;
+  onWeeks: (n: number) => void;
   onConfirm: () => void;
   onLogin: () => void;
 }
@@ -21,7 +26,7 @@ interface Props {
  * inferior (las dos variantes se alternan con CSS, `display: none` las saca también del árbol
  * de accesibilidad).
  */
-export function BookingPanel({ court, slot, date, duration, fits, loggedIn, submitting, onConfirm, onLogin }: Props) {
+export function BookingPanel({ court, slot, date, duration, fits, loggedIn, submitting, repeat, weeks, onRepeat, onWeeks, onConfirm, onLogin }: Props) {
   const sel = court && slot !== null ? { court, slot } : null;
   const start = sel ? fromSlot(sel.slot) : "";
   const end = sel ? fromSlot(sel.slot + duration / 30) : "";
@@ -31,7 +36,7 @@ export function BookingPanel({ court, slot, date, duration, fits, loggedIn, subm
   const cta = (compact: boolean) =>
     loggedIn ? (
       <button type="button" className={`btn btn-primary${compact ? "" : " btn-block"}`} disabled={!canBook} onClick={onConfirm}>
-        {submitting ? "Reservando…" : compact ? "Reservar" : "Confirmar reserva"}
+        {submitting ? "Reservando…" : repeat ? (compact ? `Reservar ${weeks}` : `Confirmar ${weeks} reservas`) : compact ? "Reservar" : "Confirmar reserva"}
       </button>
     ) : (
       <button type="button" className={`btn btn-primary${compact ? "" : " btn-block"}`} disabled={!sel || !fits} onClick={onLogin}>
@@ -71,15 +76,20 @@ export function BookingPanel({ court, slot, date, duration, fits, loggedIn, subm
           </p>
         )}
 
+        <RepeatOption date={sel ? date : ""} price={sel ? price : null} repeat={repeat} weeks={weeks} onRepeat={onRepeat} onWeeks={onWeeks} />
+
         <div className="panel-total">
-          <span>A pagar al terminar de jugar</span>
-          <strong className={`price${sel ? "" : " is-empty"}`}>{sel && price !== null ? `$${price}` : "—"}</strong>
+          <span>{repeat ? "Total de la serie (se paga por partido)" : "A pagar al terminar de jugar"}</span>
+          <strong className={`price${sel ? "" : " is-empty"}`}>
+            {sel && price !== null ? `$${repeat ? price * weeks : price}` : "—"}
+          </strong>
         </div>
         {cta(false)}
         <p className="panel-note">Se paga en el complejo. Puedes cancelar antes de la hora de inicio.</p>
       </aside>
 
       <div className="bar" role="region" aria-label="Tu reserva">
+        <RepeatOption compact date={sel ? date : ""} price={sel ? price : null} repeat={repeat} weeks={weeks} onRepeat={onRepeat} onWeeks={onWeeks} />
         <div className="bar-text">
           <div className="bar-title">{sel ? `${shortName(sel.court.name)} · ${start}` : "Elige un bloque libre"}</div>
           <div className={`bar-sub${sel && !fits ? " warn" : ""}`}>

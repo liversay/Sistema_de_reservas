@@ -269,11 +269,14 @@ export function DayBookings() {
               courts={courts}
               initialDate={date}
               onClose={() => setAside(null)}
-              onCreated={(b) => {
+              onCreated={(b, count) => {
                 setAside(null);
                 setNotice({
                   kind: "ok",
-                  message: `Reserva creada: ${b.courtName}, ${b.startTime}–${b.endTime}, ${money(b.price)}.`,
+                  message:
+                    count > 1
+                      ? `Serie creada: ${count} reservas semanales desde el ${b.date}, ${b.courtName}, ${b.startTime}–${b.endTime}, ${money(b.price)} c/u.`
+                      : `Reserva creada: ${b.courtName}, ${b.startTime}–${b.endTime}, ${money(b.price)}.`,
                 });
                 if (b.date !== date) setParams({ fecha: b.date }, { replace: true });
                 else void refresh(true);

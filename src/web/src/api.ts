@@ -32,6 +32,8 @@ export interface Booking {
   status: "confirmada" | "cancelada" | "no_show";
   payment: { status: "pendiente" | "pagado"; amount?: number };
   createdAt: string;
+  /** CR-01: presente en las ocurrencias de una serie semanal. */
+  seriesId?: string;
 }
 
 export type PaymentMethod = "efectivo" | "transferencia" | "tarjeta";
@@ -114,6 +116,10 @@ export const api = {
   logout: () => request<void>("/auth/logout", { method: "POST" }),
   book: (input: { courtId: string; date: string; startTime: string; durationMin: Duration }) =>
     request<Booking>("/bookings", { method: "POST", body: input }),
+  bookSeries: (input: { courtId: string; date: string; startTime: string; durationMin: Duration; weeks: number }) =>
+    request<{ seriesId: string; bookings: Booking[] }>("/bookings/series", { method: "POST", body: input }),
+  cancelFuture: (seriesId: string) =>
+    request<{ cancelled: number }>(`/bookings/series/${encodeURIComponent(seriesId)}/cancel-future`, { method: "POST" }),
   myBookings: () => request<Booking[]>("/bookings/mine"),
   cancel: (id: string) => request<Booking>(`/bookings/${encodeURIComponent(id)}/cancel`, { method: "POST" }),
   admin: {
@@ -126,6 +132,14 @@ export const api = {
       durationMin: Duration;
       guest: { name: string; phone: string };
     }) => request<AdminBooking>("/admin/bookings", { method: "POST", body: input }),
+    createSeries: (input: {
+      courtId: string;
+      date: string;
+      startTime: string;
+      durationMin: Duration;
+      weeks: number;
+      guest: { name: string; phone: string };
+    }) => request<{ seriesId: string; bookings: AdminBooking[] }>("/admin/bookings/series", { method: "POST", body: input }),
     pay: (id: string, input: { amount: number; method: PaymentMethod }) =>
       request<AdminBooking>(`/admin/bookings/${encodeURIComponent(id)}/payment`, { method: "POST", body: input }),
     noShow: (id: string) => request<AdminBooking>(`/admin/bookings/${encodeURIComponent(id)}/no-show`, { method: "POST" }),
