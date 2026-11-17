@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { api, ApiError, CONFLICT_MESSAGE, type AdminBooking, type AdminCourt } from "../../api";
 import { fromSlot, priceFor, toSlot, type Duration } from "../../shared";
-import { isoDate, money, weekdayIndex } from "../../dates";
+import { addDays, diffDays, HORIZON_DAYS, isoDate, money, weekdayIndex } from "../../dates";
+import { formatTime12 } from "../../format";
 import { DurationPicker } from "../DurationPicker";
 import { AlertIcon } from "../Icons";
-import { RepeatOption } from "../RepeatOption";
+import { MAX_WEEKS, MIN_WEEKS, RepeatOption } from "../RepeatOption";
 
 /** Horas de inicio posibles ese día según el horario de la cancha (pasos de 30 min). */
 function startOptions(court: AdminCourt | undefined, date: string, duration: Duration): string[] {
@@ -41,8 +42,14 @@ export function NewBookingForm({
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
-  const [repeat, setRepeat] = useState(false);
-  const [weeks, setWeeks] = useState(4);
+  const [repeatWanted, setRepeat] = useState(false);
+  const [weeksWanted, setWeeks] = useState(4);
+  // RN-14: el mismo horizonte de 30 días aplica al admin (también a cada ocurrencia de una serie).
+  const today = isoDate(new Date());
+  const horizonDate = addDays(today, HORIZON_DAYS);
+  const maxWeeks = Math.min(MAX_WEEKS, Math.max(0, Math.floor(diffDays(date, horizonDate) / 7) + 1));
+  const repeat = repeatWanted && maxWeeks >= MIN_WEEKS;
+  const weeks = Math.max(MIN_WEEKS, Math.min(weeksWanted, maxWeeks));
   const heading = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -116,6 +123,8 @@ export function NewBookingForm({
         <span className="field-label">Fecha</span>
         <input
           type="date"
+          min={today}
+          max={horizonDate}
           value={date}
           onChange={(e) => {
             if (e.target.value) setDate(e.target.value);
@@ -129,7 +138,7 @@ export function NewBookingForm({
           {options.length === 0 && <option value="">Sin horarios</option>}
           {options.map((o) => (
             <option key={o} value={o}>
-              {o}
+              {formatTime12(o)}
             </option>
           ))}
         </select>
@@ -149,7 +158,7 @@ export function NewBookingForm({
         <input type="tel" autoComplete="off" value={phone} onChange={(e) => { setPhone(e.target.value); setFields(({ phone: _p, "guest.phone": _g, ...r }) => r); }} />
         {(fields.phone || fields["guest.phone"]) && <span className="field-error">{fields.phone ?? fields["guest.phone"]}</span>}
       </label>
-      <RepeatOption date={date} price={price} repeat={repeat} weeks={weeks} onRepeat={setRepeat} onWeeks={setWeeks} />
+      <RepeatOption date={date} price={price} repeat={repeat} weeks={weeks} maxWeeks={maxWeeks} horizonDate={horizonDate} onRepeat={setRepeat} onWeeks={setWeeks} />
       <div className="panel-total admin-total">
         <span>{repeat ? "Total de la serie" : "Precio"}</span>
         <span className={`price${price === null ? " is-empty" : ""}`} data-testid="nueva-precio">

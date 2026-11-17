@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { api, ApiError, type AdminBooking, type PaymentMethod } from "../../api";
-import { longDate, money } from "../../dates";
+import { money } from "../../dates";
+import { formatLongDate, formatTime12 } from "../../format";
 import { AlertIcon } from "../Icons";
 
 const METHODS: { id: PaymentMethod; label: string }[] = [
   { id: "efectivo", label: "Efectivo" },
   { id: "transferencia", label: "Transferencia" },
   { id: "tarjeta", label: "Tarjeta" },
+  { id: "yappy", label: "Yappy" },
 ];
 
 export function clientOf(b: AdminBooking): { name: string; phone: string; guest: boolean } {
@@ -63,8 +65,8 @@ export function PaymentForm({
           Registrar pago
         </h2>
         <p className="muted small admin-panel-sub">
-          {c.name} · {booking.courtName} · <span className="cap-inline">{longDate(booking.date)}</span>{" "}
-          {booking.startTime}–{booking.endTime}
+          {c.name} · {booking.courtName} · <span className="cap-inline">{formatLongDate(booking.date)}</span>{" "}
+          {formatTime12(booking.startTime)} – {formatTime12(booking.endTime)}
         </p>
       </div>
       {error && (

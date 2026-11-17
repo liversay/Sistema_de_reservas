@@ -208,11 +208,53 @@ button:disabled {
   padding-bottom: 32px;
 }
 
+.daystrip-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-top: 16px;
+}
+.datepick {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.datepick input {
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+}
+.daystrip-hint {
+  font-size: 13px;
+  color: var(--on-dark-muted);
+}
+.day-m {
+  min-height: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--on-dark-muted);
+}
+.day.is-on .day-m {
+  color: var(--green);
+}
 .daystrip {
   display: flex;
   gap: 8px;
-  margin-top: 20px;
+  margin-top: 12px;
+  padding-bottom: 6px;
   overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.4) transparent;
   padding: 4px 2px;
   scrollbar-width: none;
 }
@@ -222,7 +264,7 @@ button:disabled {
 .day {
   flex: 0 0 auto;
   width: 60px;
-  height: 66px;
+  height: 78px;
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.22);
   background: transparent;
@@ -631,11 +673,17 @@ button:disabled {
   inset: 0;
   display: flex;
   align-items: center;
+  flex-direction: column;
   justify-content: center;
   font-size: 12px;
   font-weight: 800;
+  line-height: 1.1;
   color: var(--green);
   font-variant-numeric: tabular-nums;
+}
+.cell-time small {
+  font-size: 10px;
+  font-weight: 700;
 }
 
 .legend {
@@ -826,7 +874,9 @@ button:disabled {
 /* ---------- Formularios ---------- */
 .page-auth {
   max-width: 480px;
-  margin-top: -20px;
+  /* CR-02 / CA-20: la tarjeta ya no se monta sobre el encabezado verde (≥ 32 px de separación). */
+  margin-top: 0;
+  padding-top: 40px;
 }
 .auth-card {
   padding: 24px;
@@ -1064,7 +1114,7 @@ button:disabled {
   }
   .day {
     width: 54px;
-    height: 62px;
+    height: 74px;
   }
   .board {
     padding: 14px 12px;
@@ -1201,4 +1251,101 @@ button:disabled {
 .series-title {
   font-family: var(--display);
   font-weight: 800;
+}
+
+/* ---------- CR-02: reserva sin cuenta, socios y horizonte ---------- */
+.guest-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line-soft);
+}
+.guest-title {
+  margin: 0;
+  font-weight: 800;
+}
+.guest-login {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+.linklike {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--green);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.member-badge {
+  display: inline-block;
+  margin: 12px 0 0;
+  padding: 4px 12px;
+  border-radius: 14px;
+  background: var(--ball);
+  color: var(--green);
+  font-weight: 800;
+  font-size: 14px;
+}
+.price-stack {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.1;
+}
+.price-old {
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 600;
+}
+.repeat-why {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.bar-guest {
+  flex: 1 0 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.bar-guest input {
+  flex: 1 1 130px;
+  min-width: 0;
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  font: inherit;
+}
+.bar-guest input[aria-invalid="true"] {
+  border-color: var(--danger, #b3261e);
+}
+.bar-guest .field-error {
+  flex: 1 0 100%;
+  margin: 0;
+}
+.guest-confirm dl {
+  margin: 8px 0 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 12px;
+}
+.guest-confirm dt {
+  color: var(--muted);
+}
+.guest-confirm dd {
+  margin: 0;
+}
+.benefit {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--green-soft);
+  color: var(--green);
+  font-weight: 700;
 }

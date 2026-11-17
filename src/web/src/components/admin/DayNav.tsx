@@ -1,4 +1,5 @@
-import { addDays, isoDate, longDate } from "../../dates";
+import { addDays, isoDate } from "../../dates";
+import { formatLongDate, formatTime12 } from "../../format";
 
 /** Navegación por día: anterior, selector de fecha, siguiente y "Hoy". */
 export function DayNav({ date, onChange }: { date: string; onChange: (d: string) => void }) {
@@ -30,7 +31,7 @@ export function DayNav({ date, onChange }: { date: string; onChange: (d: string)
         Hoy
       </button>
       <span className="daynav-label cap" aria-live="polite">
-        {longDate(date)}
+        {formatLongDate(date)}
       </span>
     </div>
   );

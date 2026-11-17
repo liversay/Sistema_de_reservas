@@ -5,7 +5,8 @@ import { AlertIcon, CheckIcon } from "../../components/Icons";
 import { DayNav } from "../../components/admin/DayNav";
 import { NewBookingForm } from "../../components/admin/NewBookingForm";
 import { clientOf, PaymentForm } from "../../components/admin/PaymentForm";
-import { durationLabel, isoDate, longDate, money } from "../../dates";
+import { durationLabel, isoDate, money } from "../../dates";
+import { formatLongDate, formatTime12 } from "../../format";
 
 type Load = { status: "loading" } | { status: "error"; message: string } | { status: "ok"; bookings: AdminBooking[] };
 type Aside = { kind: "new" } | { kind: "pay"; id: string } | null;
@@ -125,7 +126,7 @@ export function DayBookings() {
       <section className="hero hero-compact">
         <div className="hero-inner">
           <p className="eyebrow">Reservas del día</p>
-          <h1 className="hero-title cap">{longDate(date)}</h1>
+          <h1 className="hero-title cap">{formatLongDate(date)}</h1>
         </div>
       </section>
       <main className="page" id="contenido">
@@ -196,8 +197,8 @@ export function DayBookings() {
                       return (
                         <tr key={b.id} className={aside?.kind === "pay" && aside.id === b.id ? "is-active" : undefined}>
                           <td className="num nowrap" data-label="Hora">
-                            <strong>{b.startTime}</strong>
-                            <span className="muted small"> – {b.endTime}</span>
+                            <strong>{formatTime12(b.startTime)}</strong>
+                            <span className="muted small"> – {formatTime12(b.endTime)}</span>
                             <div className="muted small">{durationLabel(b.durationMin)}</div>
                           </td>
                           <td data-label="Cancha">{b.courtName}</td>
@@ -272,7 +273,7 @@ export function DayBookings() {
                                   <button
                                     type="button"
                                     className="btn btn-secondary btn-small"
-                                    aria-label={`Cancelar las próximas de la serie ${b.courtName} ${b.startTime}`}
+                                    aria-label={`Cancelar las próximas de la serie ${b.courtName} ${formatTime12(b.startTime)}`}
                                     onClick={() => setAsking({ id: b.id, action: "series" })}
                                   >
                                     Cancelar las próximas de la serie
@@ -301,8 +302,8 @@ export function DayBookings() {
                   kind: "ok",
                   message:
                     count > 1
-                      ? `Serie creada: ${count} reservas semanales desde el ${b.date}, ${b.courtName}, ${b.startTime}–${b.endTime}, ${money(b.price)} c/u.`
-                      : `Reserva creada: ${b.courtName}, ${b.startTime}–${b.endTime}, ${money(b.price)}.`,
+                      ? `Serie creada: ${count} reservas semanales desde el ${formatLongDate(b.date)}, ${b.courtName}, ${formatTime12(b.startTime)} – ${formatTime12(b.endTime)}, ${money(b.price)} c/u.`
+                      : `Reserva creada: ${b.courtName}, ${formatTime12(b.startTime)} – ${formatTime12(b.endTime)}, ${money(b.price)}.`,
                 });
                 if (b.date !== date) setParams({ fecha: b.date }, { replace: true });
                 else void refresh(true);

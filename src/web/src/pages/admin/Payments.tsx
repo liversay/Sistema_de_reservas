@@ -3,7 +3,8 @@ import { api, ApiError, type AdminBooking } from "../../api";
 import { AlertIcon, CheckIcon } from "../../components/Icons";
 import { DayNav } from "../../components/admin/DayNav";
 import { clientOf, PaymentForm } from "../../components/admin/PaymentForm";
-import { isoDate, longDate, money } from "../../dates";
+import { isoDate, money } from "../../dates";
+import { formatLongDate, formatTime12 } from "../../format";
 
 type Lists = { pending: AdminBooking[]; paid: AdminBooking[] };
 
@@ -128,7 +129,7 @@ export function Payments() {
                       <div className="due-main">
                         <div className="cell-name">{c.name}</div>
                         <div className="muted small">
-                          {b.courtName} · <span className="cap-inline">{longDate(b.date)}</span> {b.startTime}–{b.endTime} · <span className="num">{c.phone}</span>
+                          {b.courtName} · <span className="cap-inline">{formatLongDate(b.date)}</span> {formatTime12(b.startTime)} – {formatTime12(b.endTime)} · <span className="num">{c.phone}</span>
                         </div>
                       </div>
                       {asking === b.id ? (
@@ -204,7 +205,7 @@ export function Payments() {
                       const c = clientOf(b);
                       return (
                         <tr key={b.id}>
-                          <td className="num nowrap">{b.startTime}</td>
+                          <td className="num nowrap">{formatTime12(b.startTime)}</td>
                           <td>{b.courtName}</td>
                           <td>
                             {c.name}
