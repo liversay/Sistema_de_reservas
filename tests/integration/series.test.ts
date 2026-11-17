@@ -42,11 +42,11 @@ describe("CR-01 crear serie (CA-15)", () => {
     );
   });
 
-  test("400: weeks fuera de 2..8 o no entero, sin sesión 401", async () => {
+  test("400: weeks fuera de 2..8 o no entero; sin sesión y sin guest 400 (CR-02)", async () => {
     for (const weeks of [1, 9, 2.5, "4"]) {
       expect((await t.call("POST", "/api/bookings/series", { cookie: ana, body: series({ weeks, startTime: "20:00" }) })).status).toBe(400);
     }
-    expect((await t.call("POST", "/api/bookings/series", { body: series() })).status).toBe(401);
+    expect((await t.call("POST", "/api/bookings/series", { body: series() })).status).toBe(400);
     expect(await count({ startTime: "20:00" })).toBe(0);
   });
 

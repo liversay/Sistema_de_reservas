@@ -79,8 +79,8 @@ describe("auth", () => {
     t.clock.now = original;
   });
 
-  test("/api/bookings sin sesión 401; cliente en /api/admin 403; sin sesión en admin 401", async () => {
-    expect((await t.call("POST", "/api/bookings", { body: {} })).status).toBe(401);
+  test("/api/bookings/mine sin sesión 401 (CR-02: reservar ya no exige sesión); cliente en /api/admin 403; sin sesión en admin 401", async () => {
+    expect((await t.call("POST", "/api/bookings", { body: {} })).status).toBe(400); // CR-02: sin sesión exige guest/cuerpo válido
     expect((await t.call("GET", "/api/bookings/mine")).status).toBe(401);
     const c = await t.register("cli@x.com");
     expect((await t.call("GET", "/api/admin/courts", { cookie: c.cookie })).status).toBe(403);
