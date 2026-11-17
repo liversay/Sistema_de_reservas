@@ -57,17 +57,17 @@ Estado: ✔ tareas 10 a 12 implementadas y verificadas localmente (90 `bun test`
 Los ciclos 1–2 no dejaron nada preparado para series (sin `seriesId`), para que el cambio sea real.
 Los cambios de este ciclo están marcados con `CR-01` en cada documento.
 
-## Ciclo 4 (cambio de requerimiento CR-02, en curso)
+## Ciclo 4 (cambio de requerimiento CR-02, completado)
 
-Estado: spec en revisión (tarea 13); el código y las pruebas siguen pendientes. Las issues del ciclo 4 llevan la etiqueta `ciclo-4`. Las ramas de las tareas 14 a 17 son las previstas.
+Estado: completado. Spec [#33](https://github.com/liversay/Sistema_de_reservas/pull/33), API [#34](https://github.com/liversay/Sistema_de_reservas/pull/34), web cliente [#35](https://github.com/liversay/Sistema_de_reservas/pull/35), backoffice [#36](https://github.com/liversay/Sistema_de_reservas/pull/36) y pruebas y evidencia [#37](https://github.com/liversay/Sistema_de_reservas/pull/37). Las issues del ciclo 4 llevan la etiqueta `ciclo-4`.
 
 | Tarea | Responsable (rol) | Rama | Issue | Alcance |
 |---|---|---|---|---|
 | 13 | liversay (Spec) | `docs/28-cr-02` | [#28](https://github.com/liversay/Sistema_de_reservas/issues/28) | CR-02 en las specs: RF-17…RF-22, RN-14…RN-16, CA-19…CA-25, api, modelo, plan, ADR-006 |
 | 14 | aaronbatistaa (Dev) | `feat/29-api-cr-02` | [#29](https://github.com/liversay/Sistema_de_reservas/issues/29) | API: reserva sin sesión, descuento, horizonte, `settings/loyalty`, `calendar`, `payments/summary`, método `yappy` |
 | 15 | aaronbatistaa (Dev) | `feat/30-web-cliente-cr-02` | [#30](https://github.com/liversay/Sistema_de_reservas/issues/30) | Web cliente: horas en 12 h, 31 días, sin horas pasadas, reservar sin cuenta, club de socios, login sin pegarse al encabezado |
-| 16 | aaronbatistaa (Dev) | `feat/31-backoffice-tablero-cr-02` | [#31](https://github.com/liversay/Sistema_de_reservas/issues/31) | Backoffice: tablero Reservas/Pagos, tarjeta de detalle, indicadores, ajuste del % de socios |
-| 17 | Diegoalevq (QA) | `test/32-cr-02` | [#32](https://github.com/liversay/Sistema_de_reservas/issues/32) | e2e actualizados y `cr02.e2e.ts` (CA-19…CA-25), evidencia en `docs/testing.md`, README y CHANGELOG |
+| 16 | aaronbatistaa (Dev) | `feat/31-backoffice-tablero` | [#31](https://github.com/liversay/Sistema_de_reservas/issues/31) | Backoffice: tablero Reservas/Pagos, tarjeta de detalle, indicadores, ajuste del % de socios |
+| 17 | Diegoalevq (QA) | `test/32-cr-02-qa` | [#32](https://github.com/liversay/Sistema_de_reservas/issues/32) | e2e actualizados y `cr02.e2e.ts` (CA-19…CA-25), evidencia en `docs/testing.md`, README y CHANGELOG |
 
 ### Flujo del cambio CR-02
 

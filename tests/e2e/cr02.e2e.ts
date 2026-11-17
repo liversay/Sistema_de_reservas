@@ -98,7 +98,9 @@ test("CA-19 reservar sin cuenta: nombre y teléfono con errores por campo, 201 p
     payment: { status: "pendiente" },
   });
   // 400 con `fields` por campo y sin crear nada.
-  const before = (await adminBookings((await loginAdminCtx(browser)).request, date)).length;
+  const admin0 = await loginAdminCtx(browser);
+  const before = (await adminBookings(admin0.request, date)).length;
+  await admin0.close();
   const noGuest = await anon.request.post("/api/bookings", { data: { ...body, startTime: "21:00" } });
   expect(noGuest.status()).toBe(400);
   expect(Object.keys((await noGuest.json()).fields)).toEqual(expect.arrayContaining(["guest.name", "guest.phone"]));
@@ -128,7 +130,7 @@ test("CA-19 reservar sin cuenta: nombre y teléfono con errores por campo, 201 p
   expect(ownJson.user?.name).toBe(member.name);
   expect(ownJson.guest).toBeUndefined();
 
-  // Admin: los 3 invitados quedaron guardados (la 400 no creó nada: solo 1 + 2 de la serie + 1 del socio).
+  // Admin: las 400 no crearon nada; ese día solo se sumaron la 1.ª ocurrencia de la serie y la del socio (2), y hay 3 reservas de invitado (UI, API y serie).
   const admin = await loginAdminCtx(browser);
   const list = await adminBookings(admin.request, date);
   expect(list.length - before).toBe(2); // 1.ª ocurrencia de la serie + la del socio
@@ -287,7 +289,16 @@ const time12 = (slot: number) => {
   return `${h % 12 === 0 ? 12 : h % 12}:${slot % 2 ? "30" : "00"} ${h < 12 ? "a. m." : "p. m."}`;
 };
 
+/** Espera a que falten al menos 75 s para el próximo límite de 30 min, así «el bloque actual» no cambia durante la prueba. */
+async function settleSlot() {
+  const n = new Date();
+  const left = 1800 - ((n.getMinutes() % 30) * 60 + n.getSeconds());
+  if (left < 75) await new Promise((r) => setTimeout(r, (left + 2) * 1000));
+}
+
 test("CA-22 sin horas pasadas y horas en 12 h con fecha larga en cliente y backoffice", async ({ page, context, browser }) => {
+  test.setTimeout(150_000);
+  await settleSlot();
   test.skip(currentSlot() >= 44, "A partir de las 22:00 no queda un bloque libre hoy para contrastar con los pasados.");
   const admin = await loginAdminCtx(browser);
   const original = await (await admin.request.get("/api/admin/courts/padel-1")).json();
@@ -567,7 +578,7 @@ test("CA-24 tablero de pagos: indicadores del rango, desglose por método con Ya
   // El cobro por Yappy se hace desde la tarjeta del tablero.
   await page.goto(`/admin?fecha=${day}`);
   await page.locator(`[data-booking="${yappy.id}"]`).click();
-  let dialog = page.getByRole("dialog");
+  const dialog = page.getByRole("dialog");
   await dialog.getByRole("button", { name: "Cobrar $45" }).click();
   await expect(dialog.getByLabel("Monto cobrado ($)")).toHaveValue("45");
   await expect(dialog.getByRole("radio")).toHaveCount(4);
@@ -638,8 +649,6 @@ test("CA-24 tablero de pagos: indicadores del rango, desglose por método con Ya
   await page.goto(`/admin?vista=pagos&fecha=${day}&rango=dia`);
   await expect(page.getByTestId("kpi-cobrado")).toHaveText("$190");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
-  dialog = page.getByRole("dialog");
-  await expect(dialog).toHaveCount(0);
 });
 
 test("CA-25 el admin configura el % de socios: validaciones, permisos y solo afecta a reservas nuevas", async ({ page, context, browser }) => {

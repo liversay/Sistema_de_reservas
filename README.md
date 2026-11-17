@@ -97,4 +97,4 @@ Los roles rotan por ciclo (detalle en [`specs/implementation-plan.md`](specs/imp
 
 ## Estado
 
-Ciclos 1 a 4 completados: ciclos 1 a 3 publicados (PRs #10 y #15–#26) y ciclo 4 (CR-02) con spec #33, API #34, web cliente #35, backoffice #36 y pruebas y evidencia en la rama `test/32-cr-02-qa` (Closes #32); el CI de GitHub Actions (`bun test`) corre en cada PR. Pruebas: 128 `bun test` y 27 e2e (CA-01…CA-25). Historial en [`CHANGELOG.md`](CHANGELOG.md).
+Ciclos 1 a 4 completados: ciclos 1 a 3 publicados (PRs #10 y #15–#26) y ciclo 4 (CR-02) con spec #33, API #34, web cliente #35, backoffice #36 y pruebas y evidencia #37 (Closes #32); el CI de GitHub Actions (`bun test`) corre en cada PR. Pruebas: 128 `bun test` y 27 e2e (CA-01…CA-25). Historial en [`CHANGELOG.md`](CHANGELOG.md).
