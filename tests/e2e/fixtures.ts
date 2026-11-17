@@ -63,7 +63,7 @@ export async function bookViaApi(
 }
 
 /**
- * Reserva en el PASADO (ayer o antes). La API rechaza turnos pasados (RN-04) y el reloj no se puede
+ * Reserva en el PASADO (ayer o antes; con `daysAgo` negativo, en el futuro). La API rechaza turnos pasados (RN-04) y el reloj no se puede
  * adelantar en un servidor real, así que el fixture escribe directo en MongoDB `canchas_e2e`, con la
  * misma forma que `createBooking` (src/api/bookings/service.ts): una reserva `confirmada` con pago
  * `pendiente` y un `slot_lock` por (espacio × bloque). Es la única forma de llegar a "jugada".
@@ -77,6 +77,8 @@ export async function seedPastBooking(opts: {
   price: number;
   guest?: { name: string; phone: string };
   userId?: string;
+  /** CR-01: la agrega a una serie existente (p. ej. una ocurrencia ya jugada de una serie real). */
+  seriesId?: string;
 }): Promise<{ id: string; date: string }> {
   const durationMin = opts.durationMin ?? 60;
   const date = dayOffset(-opts.daysAgo);
@@ -90,6 +92,7 @@ export async function seedPastBooking(opts: {
       courtId: opts.courtId,
       ...(opts.userId ? { userId: opts.userId } : { guest: opts.guest }),
       createdBy: opts.userId ? "client" : "admin",
+      ...(opts.seriesId ? { seriesId: opts.seriesId } : {}),
       date,
       startSlot: opts.startSlot,
       durationMin,
