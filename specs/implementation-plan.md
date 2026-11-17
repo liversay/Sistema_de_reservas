@@ -12,7 +12,9 @@ Los roles rotan por ciclo.
 | 2 | Reserva del cliente, cuentas, Mis reservas, backoffice | aaronbatistaa | Diegoalevq | liversay |
 | 3 | Cambio de requerimiento (reservas recurrentes), pagos, README, cierre | Diegoalevq | liversay | aaronbatistaa |
 
-## Ciclo 1
+## Ciclo 1 (completado ✔)
+
+Estado: ✔ implementado y verificado localmente (48 pruebas en verde). **Los PR de las tareas 2 a 4 están pendientes de push**; hasta entonces la rama de cada tarea vive en el clon de su autor y no hay revisión ni merge en `main`.
 
 | Tarea | Responsable (rol) | Rama | Issue | Alcance |
 |---|---|---|---|---|
@@ -21,7 +23,9 @@ Los roles rotan por ciclo.
 | 3 | aaronbatistaa (Dev) | `feat/3-reservas-core` | [#3](https://github.com/liversay/Sistema_de_reservas/issues/3) | Base de datos, disponibilidad, creación de reservas, slot_locks |
 | 4 | Diegoalevq (QA) | `test/4-doble-reserva-ci` | [#4](https://github.com/liversay/Sistema_de_reservas/issues/4) | Suite de doble reserva (CA-05, CA-06) y CI |
 
-## Ciclo 2
+## Ciclo 2 (en curso)
+
+Estado: tarea 5 (esta) en curso; tareas 6 a 9 pendientes. La tarea 5 fija los contratos de `specs/api.md` y las pruebas previstas por CA en `specs/acceptance-criteria.md` antes de que Dev implemente.
 
 | Tarea | Responsable (rol) | Rama | Issue | Alcance |
 |---|---|---|---|---|
@@ -50,5 +54,5 @@ RF → RN → CA → prueba. La tabla CA → prueba vive en `docs/testing.md`.
 
 | Ciclo | CA cubiertos |
 |---|---|
-| 1 | CA-01, CA-03 (cálculo), CA-04, CA-05, CA-06 a nivel de dominio y base de datos |
+| 1 ✔ | CA-01, CA-03 (cálculo), CA-04, CA-05, CA-06 a nivel de dominio y base de datos |
 | 2 | CA-01…CA-14 en API y e2e |

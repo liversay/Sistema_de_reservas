@@ -21,3 +21,12 @@
 - **Contexto:** hay tres integrantes con roles rotativos, entrega en un día, y `gh` solo tiene sesión de liversay.
 - **Decisión:** un agente de IA (Claude Code) ejecuta las tareas desde los tres clones, usando en cada commit la identidad del integrante con el rol de ese ciclo. Los PRs e issues se crean desde la cuenta liversay; las revisiones de otros roles se registran como comentarios firmados, indicando rol y que fueron asistidas por IA ("revisión equivalente"). Todo uso de IA se declara en `docs/ai-log.md`.
 - **Consecuencias:** transparencia sobre quién ejecuta; los integrantes deben leer código y specs antes de presentar, porque el presentador se elige al azar.
+
+## ADR-004 Sesión con cookie firmada
+
+- **Estado:** aceptada (2026-11-16)
+- **Contexto:** el ciclo 2 añade cuentas de cliente y rol admin (RF-07, RF-08). La web y la API se sirven desde el mismo origen y no hay integraciones de terceros; se necesita algo simple de probar con `createApp`.
+- **Alternativas:** (2) JWT en `Authorization` guardado por la web en `localStorage`, expuesto a XSS y sin cierre de sesión real; (3) sesiones en la base de datos con colección `sessions`, más piezas para un alcance de un día.
+- **Decisión:** cookie `sid` firmada con un `secret` (HMAC, `hono/cookie`) que contiene solo el `userId`; `httpOnly`, `SameSite=Lax`, `path=/`. En cada petición se carga el usuario y su rol desde `users`, de modo que el rol no viaja en la cookie. Contraseñas con `Bun.password` (argon2id). `logout` borra la cookie. Errores: `401` sin sesión o cookie inválida, `403` sin rol admin.
+- **Consecuencias:** sin estado en el servidor ni colección extra; no se puede invalidar una sesión concreta antes de que el usuario sea borrado (aceptable por alcance); `secret` entra por `createApp({ secret })` y se lee de una variable de entorno en producción; `SameSite=Lax` mitiga CSRF en métodos que modifican datos; el flag `secure` se activa tras HTTPS, fuera del alcance de este entregable.
+
