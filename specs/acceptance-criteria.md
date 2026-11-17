@@ -1,6 +1,6 @@
 # Criterios de aceptación
 
-Formato Dado / Cuando / Entonces. La numeración CA-01…CA-14 es **estable**: las tareas, pruebas y
+Formato Dado / Cuando / Entonces. La numeración CA-01…CA-18 es **estable**: las tareas, pruebas y
 `docs/testing.md` la referencian. Datos de ejemplo: jueves `2026-11-19` (L–V, atención 16:00–23:00),
 sábado `2026-11-21` (S–D, atención 08:00–23:00), canchas y precios sembrados según `business-rules.md`.
 Un `now` anterior al turno se asume salvo que se indique lo contrario.
@@ -21,6 +21,10 @@ Un `now` anterior al turno se asume salvo que se indique lo contrario.
 | CA-12 | Pago solo después de jugar | RF-11 | RN-07, RN-11 |
 | CA-13 | No se presentó | RF-12 | RN-11 |
 | CA-14 | Configurar canchas, precios, horario y estado | RF-13, RF-14 | RN-04, RN-08, RN-10 |
+| CA-15 | **CR-01** Crear una serie semanal | RF-15 | RN-01..RN-05, RN-08, RN-12, RN-13 |
+| CA-16 | **CR-01** Serie todo-o-nada ante conflicto | RF-15 | RN-01, RN-02, RN-12 |
+| CA-17 | **CR-01** Cancelar las próximas de una serie | RF-16 | RN-06, RN-13 |
+| CA-18 | **CR-01** Admin crea serie para invitado y cada ocurrencia se cobra aparte | RF-15 | RN-09, RN-07, RN-12, RN-13 |
 
 ## CA-01 Ver disponibilidad (RF-01; RN-02, RN-04, RN-08)
 
@@ -106,7 +110,31 @@ Un `now` anterior al turno se asume salvo que se indique lo contrario.
 - **Cuando** cambia los precios de Media A, recorta su horario del sábado y luego la pone en mantenimiento
 - **Entonces** la reserva existente conserva su precio y su horario original; las nuevas reservas usan los precios nuevos, deben caber en el horario nuevo y se rechazan mientras la cancha esté inactiva; una cancha con reservas no puede borrarse (`409`), solo desactivarse; una cancha sin reservas se borra (`204`); el admin puede crear una cancha nueva (p. ej. "Pádel 2", con `id: "padel-2"` y `spaceIds: ["padel-2"]`, espacio que se crea en `spaces` si no existía) y aparece en la disponibilidad con sus precios y horario.
 
-## Prueba prevista por CA (ciclo 2)
+## CA-15 Crear una serie semanal (CR-01; RF-15; RN-12, RN-13)
+
+- **Dado** un cliente autenticado y "Pádel 1" libre los jueves `2026-11-19`, `2026-11-26`, `2026-12-03` y `2026-12-10` a las 20:00
+- **Cuando** crea una serie con `courtId = padel-1`, `date = 2026-11-19`, `startTime = 20:00`, `durationMin = 60` y `weeks = 4`
+- **Entonces** responde `201` con `{ seriesId, bookings }`: 4 reservas `confirmada`, con el mismo `seriesId`, en las fechas `2026-11-19`, `2026-11-26`, `2026-12-03` y `2026-12-10`, cada una con su propio precio y pago `pendiente`, y las 4 aparecen en "Mis reservas"; `weeks` fuera de 2…8 responde `400`.
+
+## CA-16 Serie todo-o-nada ante conflicto (CR-01; RF-15; RN-01, RN-02, RN-12)
+
+- **Dado** un cliente autenticado y "Pádel 1" ya reservada el `2026-12-03` a las 20:00 por otro cliente, y libre las demás fechas
+- **Cuando** intenta crear la serie semanal de 4 jueves a las 20:00 desde el `2026-11-19`
+- **Entonces** responde `409` con el mensaje "Ese horario ya fue tomado el 2026-12-03. Elige otro." y **no se crea ninguna** reserva (el `2026-11-19`, `2026-11-26` y `2026-12-10` siguen libres); lo mismo aplica al choque por cancha divisible (Media A contra Completa, RN-02); si la fecha que falla incumple horario, está en el pasado o la cancha está inactiva, responde `422` nombrando esa fecha y tampoco se crea ninguna; con dos peticiones concurrentes que se solapan en una fecha, a lo sumo una serie queda creada completa.
+
+## CA-17 Cancelar las próximas de una serie (CR-01; RF-16; RN-06, RN-13)
+
+- **Dado** una serie de 4 jueves del cliente (`2026-11-19` a `2026-12-10`, 20:00) y un `now` del `2026-11-26` a las 21:00 (la 1.ª y la 2.ª ya empezaron)
+- **Cuando** el cliente pide "cancelar las próximas" de su serie
+- **Entonces** responde `200 { cancelled: 2 }`: la 3.ª y la 4.ª pasan a `cancelada` y liberan sus bloques; la 1.ª y la 2.ª no cambian; otro cliente recibe `404` para una serie ajena; el admin puede hacerlo sobre cualquier serie con la ruta de admin (`401`/`403` sin sesión o sin rol); repetir la acción responde `200 { cancelled: 0 }`; un `seriesId` inexistente responde `404`; cancelar una sola ocurrencia con `POST /api/bookings/:id/cancel` no afecta a las demás.
+
+## CA-18 Admin crea serie para invitado y cada ocurrencia se cobra aparte (CR-01; RF-15; RN-09, RN-07, RN-12, RN-13)
+
+- **Dado** un admin autenticado y "Básquet 1" libre cuatro sábados desde el `2026-11-21` a las 10:00
+- **Cuando** crea una serie de 3 semanas con `guest = { name, phone }` y luego, con un `now` posterior al fin de la 1.ª ocurrencia, registra el pago de esa ocurrencia
+- **Entonces** responde `201` con 3 reservas `createdBy = admin` y datos de invitado con el mismo `seriesId`; falta de nombre o teléfono responde `400`; solo la 1.ª pasa a `pagado` y las otras dos siguen `pendiente` (la 2.ª sigue sin poder cobrarse hasta que termine, `422`); un choque en cualquiera de las fechas responde `409` con la fecha y no crea ninguna.
+
+## Prueba prevista por CA (ciclos 2 y 3)
 
 Cada CA tiene al menos una prueba prevista. El detalle y el estado viven en `docs/testing.md`.
 Integración de API = `bun test` sobre `createApp` con BD de prueba y `now` inyectado (tarea 6);
@@ -128,3 +156,7 @@ e2e = Playwright (tarea 9, `tests/e2e/*.e2e.ts`, cada prueba nombra sus CA).
 | CA-12 | pago con `now` 18:30 `422` y 19:00 `200`; segundo pago `409`; listas `pending`/`paid`; `amount` 0 `400` | registrar cobro |
 | CA-13 | no-show `200`, antes de terminar `422`, luego pago `409`, ya no está en `pending` | marcar "no se presentó" |
 | CA-14 | PUT precios/horario/inactiva y reserva existente intacta; `DELETE` con reservas `409`, sin reservas `204`; crear "Pádel 2" con espacio nuevo | edición de cancha en backoffice |
+| CA-15 *(CR-01)* | `POST /api/bookings/series` `201` con 4 reservas, mismo `seriesId`, fechas +7, precio por ocurrencia; `weeks` 1 y 9 `400`; `401` sin sesión | reservar serie y verla en "Mis reservas" |
+| CA-16 *(CR-01)* | choque en la 3.ª fecha `409` con mensaje exacto y 0 reservas creadas; Media A vs Completa; `422` por fecha pasada o inactiva con la fecha; series concurrentes solapadas, 1 completa | segundo cliente recibe el aviso con la fecha |
+| CA-17 *(CR-01)* | `cancel-future` con `now` intermedio `200 { cancelled: 2 }`, ajena `404`, admin cualquiera, repetir `{ cancelled: 0 }`, bloques liberados | "Cancelar las próximas" desde "Mis reservas" |
+| CA-18 *(CR-01)* | admin `POST /api/admin/bookings/series` invitado `201`, `400`, `409`; pago de una ocurrencia no cambia las otras | crear serie para invitado y cobrar una ocurrencia |
