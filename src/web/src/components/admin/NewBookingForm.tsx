@@ -23,20 +23,27 @@ function startOptions(court: AdminCourt | undefined, date: string, duration: Dur
 export function NewBookingForm({
   courts,
   initialDate,
+  initialCourtId,
+  initialStart,
   onCreated,
   onClose,
 }: {
   courts: AdminCourt[];
   initialDate: string;
+  /** CR-02: al abrirse desde un bloque libre del tablero, cancha y hora prellenadas. */
+  initialCourtId?: string;
+  initialStart?: string;
   /** `count` > 1 cuando se creó una serie (CR-01). */
   onCreated: (b: AdminBooking, count: number) => void;
   onClose: () => void;
 }) {
   const active = useMemo(() => courts.filter((c) => c.active), [courts]);
-  const [courtId, setCourtId] = useState(active[0]?.id ?? "");
+  const [courtId, setCourtId] = useState(
+    initialCourtId && active.some((c) => c.id === initialCourtId) ? initialCourtId : (active[0]?.id ?? ""),
+  );
   const [date, setDate] = useState(initialDate);
   const [duration, setDuration] = useState<Duration>(60);
-  const [startTime, setStartTime] = useState("");
+  const [startTime, setStartTime] = useState(initialStart ?? "");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [error, setError] = useState<string | null>(null);

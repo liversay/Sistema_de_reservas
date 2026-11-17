@@ -33,6 +33,8 @@ export interface Booking {
   startTime: string;
   endTime: string;
   durationMin: Duration;
+  /** Espacios físicos que ocupa (Completa = las dos medias canchas). */
+  spaceIds?: string[];
   price: number;
   /** CR-02: precio antes del descuento de socios y % aplicado (0 si fue sin sesión). */
   basePrice?: number;
@@ -47,6 +49,19 @@ export interface Booking {
 }
 
 export type PaymentMethod = "efectivo" | "transferencia" | "tarjeta" | "yappy";
+
+/** CR-02: `GET /api/admin/payments/summary` (specs/api.md). */
+export interface PaymentsSummary {
+  collected: number;
+  pending: number;
+  pendingCount: number;
+  bookings: number;
+  cancelled: number;
+  noShow: number;
+  byMethod: Record<PaymentMethod, number>;
+  byDay: { date: string; collected: number }[];
+  occupancyPct: number;
+}
 
 export interface ScheduleDay {
   weekday: number; // 0 = lunes … 6 = domingo
@@ -157,9 +172,20 @@ export const api = {
     cancel: (id: string) => request<AdminBooking>(`/admin/bookings/${encodeURIComponent(id)}/cancel`, { method: "POST" }),
     cancelFuture: (seriesId: string) =>
       request<{ cancelled: number }>(`/admin/bookings/series/${encodeURIComponent(seriesId)}/cancel-future`, { method: "POST" }),
+    /** CR-02: reservas no canceladas por día (solo días con count > 0). */
+    calendar: (from: string, to: string, signal?: AbortSignal) =>
+      request<{ date: string; count: number }[]>(
+        `/admin/bookings/calendar?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+        { signal },
+      ),
+    summary: (from: string, to: string, signal?: AbortSignal) =>
+      request<PaymentsSummary>(`/admin/payments/summary?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`, { signal }),
+    loyalty: () => request<{ discountPct: number }>("/admin/settings/loyalty"),
+    setLoyalty: (discountPct: number) =>
+      request<{ discountPct: number }>("/admin/settings/loyalty", { method: "PUT", body: { discountPct } }),
     payments: (status: "pending" | "paid", signal?: AbortSignal) =>
       request<AdminBooking[]>(`/admin/payments?status=${status}`, { signal }),
-    courts: () => request<AdminCourt[]>("/admin/courts"),
+    courts: (signal?: AbortSignal) => request<AdminCourt[]>("/admin/courts", { signal }),
     createCourt: (input: CourtInput) => request<AdminCourt>("/admin/courts", { method: "POST", body: input }),
     updateCourt: (id: string, input: CourtInput) =>
       request<AdminCourt>(`/admin/courts/${encodeURIComponent(id)}`, { method: "PUT", body: input }),

@@ -6,8 +6,7 @@ import { MyBookings } from "./pages/MyBookings";
 import { Register } from "./pages/Register";
 import { AdminLayout } from "./pages/admin/AdminLayout";
 import { Courts } from "./pages/admin/Courts";
-import { DayBookings } from "./pages/admin/DayBookings";
-import { Payments } from "./pages/admin/Payments";
+import { Board } from "./pages/admin/Board";
 
 export function App() {
   // El backoffice trae su propia barra superior.
@@ -24,9 +23,10 @@ export function App() {
         <Route path="/registro" element={<Register />} />
         <Route path="/mis-reservas" element={<MyBookings />} />
         <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<DayBookings />} />
+          <Route index element={<Board />} />
           <Route path="canchas" element={<Courts />} />
-          <Route path="pagos" element={<Payments />} />
+          {/* CR-02: Pagos es una pestaña del tablero; la ruta anterior redirige. */}
+          <Route path="pagos" element={<Navigate to="/admin?vista=pagos" replace />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

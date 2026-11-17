@@ -44,13 +44,10 @@ export function AdminLayout() {
           </Link>
           <nav className="topnav" aria-label="Backoffice">
             <NavLink to="/admin" end className="navlink">
-              Reservas
+              Tablero
             </NavLink>
             <NavLink to="/admin/canchas" className="navlink">
               Canchas y horarios
-            </NavLink>
-            <NavLink to="/admin/pagos" className="navlink">
-              Pagos
             </NavLink>
             <Link to="/" className="navlink">
               Ver sitio
