@@ -90,7 +90,7 @@ Un `now` anterior al turno se asume salvo que se indique lo contrario.
 ## CA-10 Admin ve reservas del día (RF-09; RN-06)
 
 - **Dado** un admin autenticado y reservas del `2026-11-19` (confirmada, cancelada, jugada)
-- **Cuando** abre "Reservas del día" de esa fecha *(modificado por CR-02: ahora el tablero de Reservas, ver CA-23)*
+- **Cuando** abre el tablero de Reservas de esa fecha *(modificado por CR-02: antes «Reservas del día», ver CA-23)*
 - **Entonces** ve las reservas de cada cancha *(CR-02: en el tablero de Reservas, antes una tabla)* con hora, cliente (o invitado), estado y pago de cada una, y puede cancelar cualquiera de ellas (`200`) liberando sus bloques; cancelar una ya cancelada responde `409`; un cliente que llama a cualquier ruta `/api/admin/*` recibe `403` y sin sesión `401`.
 
 ## CA-11 Admin crea reserva para invitado (RF-10; RN-09)
