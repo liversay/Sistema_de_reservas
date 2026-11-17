@@ -107,7 +107,8 @@ export function Availability() {
   const { fits } = selectionRange(selCourt, selection, duration);
   const visibleSelection = selCourt && courts.includes(selCourt) ? selection : null;
 
-  const allClosed = allCourts.every((c) => c.slots.every((s) => s.state === "cerrado"));
+  const noCourts = load.status === "ok" && allCourts.length === 0;
+  const allClosed = !noCourts && allCourts.every((c) => c.slots.every((s) => s.state === "cerrado"));
   const noneFree = courts.every((c) => c.slots.every((s) => s.state !== "libre"));
 
   async function confirm() {
@@ -249,6 +250,12 @@ export function Availability() {
                 <button type="button" className="btn btn-secondary" onClick={() => void refresh()}>
                   Reintentar
                 </button>
+              </div>
+            )}
+            {noCourts && (
+              <div className="state-box empty">
+                <p className="empty-title">No hay canchas disponibles</p>
+                <p>Vuelve a intentarlo más tarde.</p>
               </div>
             )}
             {load.status === "ok" && allClosed && (
