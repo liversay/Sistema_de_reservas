@@ -1,12 +1,11 @@
 # Sistema de Reservas de Canchas
 
 Sistema web para reservar canchas deportivas (fútbol divisible en dos mitades, pádel y básquet)
-con backoffice para el administrador. Proyecto 2 de Tópicos Especiales II (ODD → SDD → código →
-pruebas).
+con backoffice para el administrador.
 
 ## Problema y outcome
 
-El complejo coordina reservas por WhatsApp y hay cruces de horario. El cliente debe poder ver qué
+El complejo coordina las reservas por WhatsApp y hay cruces de horario. El cliente debe poder ver qué
 está libre y reservar en menos de un minuto; el administrador debe tener cero reservas
 superpuestas y saber qué falta por cobrar. Ver [`specs/outcomes.md`](specs/outcomes.md).
 
@@ -14,7 +13,7 @@ superpuestas y saber qué falta por cobrar. Ver [`specs/outcomes.md`](specs/outc
 
 | Documento | Contenido |
 |---|---|
-| [`specs/outcomes.md`](specs/outcomes.md) | ODD: problema, outcomes, preguntas, métricas |
+| [`specs/outcomes.md`](specs/outcomes.md) | Problema, outcomes, preguntas, métricas |
 | [`specs/requirements.md`](specs/requirements.md) | RF-01…RF-22 y RNF |
 | [`specs/business-rules.md`](specs/business-rules.md) | RN-01…RN-16, precios |
 | [`specs/acceptance-criteria.md`](specs/acceptance-criteria.md) | CA-01…CA-25 |
@@ -67,7 +66,7 @@ Los puertos 3000 y 5173 deben estar libres al correr Playwright. Estrategia, tab
 ## Estructura
 
 ```text
-specs/    ODD y SDD: outcomes, requisitos, reglas, criterios de aceptación, API, modelo, plan
+specs/    Specs: outcomes, requisitos, reglas, criterios de aceptación, API, modelo, plan
 docs/     decisiones (ADR), registro de uso de IA, estrategia y evidencia de pruebas
 src/
   api/      API Hono, servicios de reservas/admin, acceso a MongoDB, seed
@@ -83,7 +82,7 @@ Los roles rotan por ciclo (detalle en [`specs/implementation-plan.md`](specs/imp
 
 | Ciclo | Alcance | Product/Spec | Arquitectura/Dev | QA/DevOps |
 |---|---|---|---|---|
-| 1 | ODD + specs, monorepo, DB local, modelo, disponibilidad + regla anti-choque | liversay | aaronbatistaa | Diegoalevq |
+| 1 | Specs, monorepo, DB local, modelo, disponibilidad + regla anti-choque | liversay | aaronbatistaa | Diegoalevq |
 | 2 | Reserva del cliente, cuentas, Mis reservas, backoffice | aaronbatistaa | Diegoalevq | liversay |
 | 3 | Cambio de requerimiento (reservas recurrentes, CR-01), pagos, README, cierre | Diegoalevq | liversay | aaronbatistaa |
 | 4 | Cambio de requerimiento (reserva sin cuenta, socios, horizonte, tablero; CR-02) | liversay | aaronbatistaa | Diegoalevq |

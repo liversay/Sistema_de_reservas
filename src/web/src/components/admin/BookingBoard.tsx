@@ -26,7 +26,7 @@ function compactTime(hhmm: string): string {
 }
 
 export interface BarEvents {
-  onPreview: (b: AdminBooking, el: HTMLElement) => void;
+  onPreview: (b: AdminBooking, el: HTMLElement, viaPointer?: boolean) => void;
   onPreviewEnd: () => void;
   onPin: (b: AdminBooking, el: HTMLElement) => void;
 }
@@ -212,7 +212,7 @@ export function BookingBoard({
                     aria-haspopup="dialog"
                     aria-expanded={openId === b.id}
                     aria-label={`${client.name}, ${b.courtName}, ${formatTime12(b.startTime)} a ${formatTime12(b.endTime)}, ${TONE_LABEL[tone]}, ${PAY_LABEL[pay]}`}
-                    onPointerEnter={(e) => e.pointerType === "mouse" && events.onPreview(b, e.currentTarget)}
+                    onPointerEnter={(e) => e.pointerType === "mouse" && events.onPreview(b, e.currentTarget, true)}
                     onPointerLeave={(e) => e.pointerType === "mouse" && events.onPreviewEnd()}
                     onFocus={(e) => events.onPreview(b, e.currentTarget)}
                     onBlur={() => events.onPreviewEnd()}
