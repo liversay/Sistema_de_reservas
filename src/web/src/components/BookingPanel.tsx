@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { fromSlot, priceFor, type Duration } from "../shared";
 import type { CourtAvailability, Guest } from "../api";
 import { durationLabel, money } from "../dates";
@@ -43,6 +44,7 @@ export function BookingPanel({
   court, slot, date, duration, fits, member, loyaltyPct, guest, guestErrors, onGuest, submitting,
   repeat, weeks, maxWeeks, horizonDate, onRepeat, onWeeks, onConfirm, onLogin,
 }: Props) {
+  const compactView = useMedia("(max-width: 960px)");
   const sel = court && slot !== null ? { court, slot } : null;
   const start = sel ? fromSlot(sel.slot) : "";
   const end = sel ? fromSlot(sel.slot + duration / 30) : "";
@@ -92,61 +94,7 @@ export function BookingPanel({
           </p>
         )}
 
-        {!member && (
-          <div className="guest-fields" data-testid="datos-invitado">
-            <p className="guest-title">Tus datos</p>
-            <label className={`field${guestErrors.name ? " has-error" : ""}`}>
-              <span className="field-label">Nombre</span>
-              <input
-                type="text"
-                name="guest-name"
-                data-testid="invitado-nombre"
-                autoComplete="name"
-                required
-                aria-invalid={!!guestErrors.name}
-                aria-describedby={guestErrors.name ? "guest-name-err" : undefined}
-                value={guest.name}
-                onChange={(e) => onGuest({ ...guest, name: e.target.value })}
-              />
-              {guestErrors.name && (
-                <span id="guest-name-err" className="field-error">
-                  {guestErrors.name}
-                </span>
-              )}
-            </label>
-            <label className={`field${guestErrors.phone ? " has-error" : ""}`}>
-              <span className="field-label">Teléfono</span>
-              <input
-                type="tel"
-                name="guest-phone"
-                data-testid="invitado-telefono"
-                autoComplete="tel"
-                inputMode="tel"
-                required
-                aria-invalid={!!guestErrors.phone}
-                aria-describedby={guestErrors.phone ? "guest-phone-err" : "guest-phone-hint"}
-                value={guest.phone}
-                onChange={(e) => onGuest({ ...guest, phone: e.target.value })}
-              />
-              {guestErrors.phone ? (
-                <span id="guest-phone-err" className="field-error">
-                  {guestErrors.phone}
-                </span>
-              ) : (
-                <span id="guest-phone-hint" className="field-hint">
-                  Para avisarte si hay cambios. Ej.: +507 6000 1234
-                </span>
-              )}
-            </label>
-            <p className="guest-login">
-              ¿Ya eres socio?{" "}
-              <button type="button" className="linklike" onClick={onLogin}>
-                Ingresa
-              </button>
-              {loyaltyPct ? ` y ahorra ${loyaltyPct} %.` : "."}
-            </p>
-          </div>
-        )}
+        {!member && !compactView && <GuestFields variant="panel" guest={guest} errors={guestErrors} onGuest={onGuest} loyaltyPct={loyaltyPct} onLogin={onLogin} />}
 
         <RepeatOption {...repeatProps} />
 
@@ -177,36 +125,7 @@ export function BookingPanel({
       </aside>
 
       <div className="bar" role="region" aria-label="Tu reserva">
-        {!member && sel && (
-          <div className="bar-guest">
-            <input
-              type="text"
-              aria-label="Nombre"
-              placeholder="Nombre"
-              data-testid="barra-nombre"
-              autoComplete="name"
-              aria-invalid={!!guestErrors.name}
-              value={guest.name}
-              onChange={(e) => onGuest({ ...guest, name: e.target.value })}
-            />
-            <input
-              type="tel"
-              aria-label="Teléfono"
-              placeholder="Teléfono"
-              data-testid="barra-telefono"
-              autoComplete="tel"
-              inputMode="tel"
-              aria-invalid={!!guestErrors.phone}
-              value={guest.phone}
-              onChange={(e) => onGuest({ ...guest, phone: e.target.value })}
-            />
-            {(guestErrors.name || guestErrors.phone) && (
-              <p className="field-error" role="alert">
-                {guestErrors.name ?? guestErrors.phone}
-              </p>
-            )}
-          </div>
-        )}
+        {!member && sel && compactView && <GuestFields variant="bar" guest={guest} errors={guestErrors} onGuest={onGuest} loyaltyPct={loyaltyPct} onLogin={onLogin} />}
         <RepeatOption compact {...repeatProps} />
         <div className="bar-text">
           <div className="bar-title">{sel ? `${shortName(sel.court.name)} · ${formatTime12(start)}` : "Elige un bloque libre"}</div>
@@ -221,5 +140,88 @@ export function BookingPanel({
         {cta(true)}
       </div>
     </>
+  );
+}
+
+/** Coincide con el breakpoint de CSS donde el panel lateral pasa a barra inferior. */
+function useMedia(query: string): boolean {
+  const [on, setOn] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const m = window.matchMedia(query);
+    const h = () => setOn(m.matches);
+    m.addEventListener("change", h);
+    h();
+    return () => m.removeEventListener("change", h);
+  }, [query]);
+  return on;
+}
+
+/**
+ * Nombre y teléfono del invitado. Solo se renderiza la variante visible (panel o barra móvil),
+ * así no hay ids ni campos duplicados en el DOM.
+ */
+function GuestFields({
+  variant, guest, errors, onGuest, loyaltyPct, onLogin,
+}: {
+  variant: "panel" | "bar";
+  guest: Guest;
+  errors: Partial<Record<GuestField, string>>;
+  onGuest: (g: Guest) => void;
+  loyaltyPct: number | null;
+  onLogin: () => void;
+}) {
+  const bar = variant === "bar";
+  const id = (f: string) => `guest-${variant}-${f}`;
+  const field = (f: GuestField, label: string, type: string, auto: string, hint?: string) => {
+    const err = errors[f];
+    const describedBy = err ? id(`${f}-err`) : hint ? id(`${f}-hint`) : undefined;
+    return (
+      <div className={`field${err ? " has-error" : ""}`}>
+        <label className="field-label" htmlFor={id(f)}>
+          {label}
+        </label>
+        <input
+          id={id(f)}
+          type={type}
+          name={`guest-${f}`}
+          autoComplete={auto}
+          inputMode={f === "phone" ? "tel" : undefined}
+          required
+          data-guest={f}
+          data-testid={bar ? `barra-${f === "name" ? "nombre" : "telefono"}` : `invitado-${f === "name" ? "nombre" : "telefono"}`}
+          aria-invalid={!!err}
+          aria-describedby={describedBy}
+          value={guest[f]}
+          onChange={(e) => onGuest({ ...guest, [f]: e.target.value })}
+        />
+        {err ? (
+          <span id={id(`${f}-err`)} className="field-error" role="alert">
+            {err}
+          </span>
+        ) : (
+          hint && (
+            <span id={id(`${f}-hint`)} className="field-hint">
+              {hint}
+            </span>
+          )
+        )}
+      </div>
+    );
+  };
+  return (
+    <div className={bar ? "bar-guest" : "guest-fields"} data-testid={bar ? "datos-invitado-barra" : "datos-invitado"}>
+      {!bar && <p className="guest-title">Tus datos</p>}
+      {field("name", "Nombre", "text", "name")}
+      {field("phone", "Teléfono", "tel", "tel", "Para avisarte si hay cambios. Ej.: +507 6000 1234")}
+      {!bar && (
+        <p className="guest-login">
+          ¿Ya eres socio?{" "}
+          <button type="button" className="linklike" onClick={onLogin}>
+            Ingresa
+          </button>
+          {loyaltyPct ? ` y ahorra ${loyaltyPct} %.` : "."}
+        </p>
+      )}
+    </div>
   );
 }

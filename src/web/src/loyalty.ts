@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
 
+export { discounted } from "./shared";
+
 /** CR-02 / RN-16: % de descuento de socios (`GET /api/settings/loyalty`); null mientras carga o si falla. */
 export function useLoyaltyPct(): number | null {
   const [pct, setPct] = useState<number | null>(null);
@@ -15,9 +17,4 @@ export function useLoyaltyPct(): number | null {
     };
   }, []);
   return pct;
-}
-
-/** Precio con descuento redondeado a centavos, igual que la API. */
-export function discounted(base: number, pct: number): number {
-  return Math.round(base * (1 - pct / 100) * 100) / 100;
 }

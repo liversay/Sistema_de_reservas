@@ -8,7 +8,7 @@ import { BookingPanel, type GuestField } from "../components/BookingPanel";
 import { DayStrip } from "../components/DayStrip";
 import { DurationPicker } from "../components/DurationPicker";
 import { AlertIcon, CheckIcon, ClockIcon } from "../components/Icons";
-import { diffDays, durationLabel, HORIZON_DAYS, money, nextDays } from "../dates";
+import { diffDays, durationLabel, HORIZON_DAYS, isoDate, money, nextDays } from "../dates";
 import { formatLongDate, formatTime12 } from "../format";
 import { MAX_WEEKS, MIN_WEEKS } from "../components/RepeatOption";
 import { useLoyaltyPct } from "../loyalty";
@@ -24,7 +24,7 @@ type Load = { status: "loading" } | { status: "error"; message: string } | { sta
 
 const GUEST_MESSAGE: Record<GuestField, string> = {
   name: "Escribe tu nombre (de 2 a 60 caracteres).",
-  phone: "Teléfono inválido: de 7 a 15 dígitos, puede empezar con +.",
+  phone: "Escribe un teléfono de 7 a 15 caracteres (números y espacios).",
 };
 
 /** Mismas reglas que la API (RN-15): nombre 2–60, teléfono /^\+?[0-9 ]{7,15}$/. */
@@ -51,7 +51,10 @@ export function Availability() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   // CR-02 / RN-14: hoy y los 30 días siguientes (31 días).
-  const days = useMemo(() => nextDays(HORIZON_DAYS + 1), []);
+  // Se recalcula al cambiar el día local (la pestaña puede quedar abierta pasada la medianoche).
+  const [today, setToday] = useState(() => isoDate(new Date()));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const days = useMemo(() => nextDays(HORIZON_DAYS + 1), [today]);
   const horizonDate = days[days.length - 1]!;
   const member = user?.role === "client";
   const loyaltyPct = useLoyaltyPct();
@@ -152,6 +155,12 @@ export function Availability() {
     return () => clearInterval(t);
   }, [date, days, refresh]);
 
+  // Cambio de día local: la tira de 31 días y el horizonte se recalculan.
+  useEffect(() => {
+    const t = setInterval(() => setToday((prev) => (isoDate(new Date()) !== prev ? isoDate(new Date()) : prev)), 60_000);
+    return () => clearInterval(t);
+  }, []);
+
   const allCourts = load.status === "ok" ? load.courts : [];
   const courts = sport === "todas" ? allCourts : allCourts.filter((c) => c.sport === sport);
   const selCourt = allCourts.find((c) => c.courtId === selection?.courtId);
@@ -167,7 +176,12 @@ export function Availability() {
     if (!member) {
       const errs = validateGuest(guest);
       setGuestErrors(errs);
-      if (Object.keys(errs).length) return;
+      const first = errs.name ? "name" : errs.phone ? "phone" : null;
+      if (first) {
+        // Espera al render de los errores y lleva el foco al primer campo inválido.
+        setTimeout(() => document.querySelector<HTMLInputElement>(`input[data-guest="${first}"]`)?.focus(), 0);
+        return;
+      }
     }
     setSubmitting(true);
     setNotice(null);
