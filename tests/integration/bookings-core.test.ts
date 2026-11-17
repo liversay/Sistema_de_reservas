@@ -19,6 +19,11 @@ describe("createBooking", () => {
     await expect(createBooking(t.ctx(), input("media-a", "22:00", 120), { userId: "u1" }, "client")).rejects.toBeInstanceOf(RuleError);
   });
 
+  test("RN-03: hora fuera de bloque o duración inválida -> RuleError", async () => {
+    await expect(createBooking(t.ctx(), input("media-a", "20:15", 60), { userId: "u1" }, "client")).rejects.toBeInstanceOf(RuleError);
+    await expect(createBooking(t.ctx(), { courtId: "media-a", date: DATE, startTime: "20:00", durationMin: 45 as never }, { userId: "u1" }, "client")).rejects.toBeInstanceOf(RuleError);
+  });
+
   test("turno pasado -> RuleError", async () => {
     await expect(createBooking(t.ctx(), input("media-a", "09:00", 60), { userId: "u1" }, "client")).rejects.toBeInstanceOf(RuleError);
     await expect(createBooking(t.ctx(), input("media-a", "10:00", 60), { userId: "u1" }, "client")).rejects.toBeInstanceOf(RuleError);
@@ -83,7 +88,7 @@ describe("cancelBooking", () => {
 
   test("cliente no cancela la de otro; admin sí", async () => {
     const b = await createBooking(t.ctx(), input("media-a", "18:30", 60), { userId: "u1" }, "client");
-    await expect(cancelBooking(t.ctx(), b._id, { userId: "u2", role: "client" })).rejects.toBeInstanceOf(RuleError);
+    await expect(cancelBooking(t.ctx(), b._id, { userId: "u2", role: "client" })).rejects.toBeInstanceOf(NotFoundError);
     await cancelBooking(t.ctx(), b._id, { userId: "adm", role: "admin" });
     expect((await t.db.collection("bookings").findOne({ _id: b._id as never }))?.status).toBe("cancelada");
   });
@@ -94,10 +99,10 @@ describe("cancelBooking", () => {
     await expect(cancelBooking(t.ctx(later), b._id, { userId: "u1", role: "client" })).rejects.toBeInstanceOf(RuleError);
   });
 
-  test("inexistente o ya cancelada -> NotFoundError / RuleError", async () => {
+  test("inexistente -> NotFoundError; ya cancelada -> ConflictError", async () => {
     await expect(cancelBooking(t.ctx(), "nope", { userId: "u1", role: "client" })).rejects.toBeInstanceOf(NotFoundError);
     const b = await createBooking(t.ctx(), input("media-a", "20:30", 60), { userId: "u1" }, "client");
     await cancelBooking(t.ctx(), b._id, { userId: "u1", role: "client" });
-    await expect(cancelBooking(t.ctx(), b._id, { userId: "u1", role: "client" })).rejects.toBeInstanceOf(RuleError);
+    await expect(cancelBooking(t.ctx(), b._id, { userId: "u1", role: "client" })).rejects.toBeInstanceOf(ConflictError);
   });
 });

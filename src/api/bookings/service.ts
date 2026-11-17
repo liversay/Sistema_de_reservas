@@ -1,5 +1,6 @@
 import { MongoServerError, type Db, type MongoClient } from "mongodb";
 import {
+  DURATIONS,
   fitsSchedule,
   isPast,
   priceFor,
@@ -19,7 +20,8 @@ type Owner = { userId: string } | { guest: { name: string; phone: string } };
 type Input = { courtId: string; date: string; startTime: string; durationMin: 60 | 90 | 120 };
 
 const isDuplicate = (e: unknown) =>
-  e instanceof MongoServerError && (e.code === 11000 || e.codeName === "DuplicateKey");
+  e instanceof MongoServerError &&
+  (e.code === 11000 || e.code === 112 || e.codeName === "DuplicateKey" || e.hasErrorLabel("TransientTransactionError"));
 
 export async function createBooking(
   ctx: Ctx,
@@ -27,6 +29,12 @@ export async function createBooking(
   owner: Owner,
   createdBy: "client" | "admin",
 ): Promise<Booking> {
+  if (!/^([01]\d|2[0-3]):(00|30)$/.test(input.startTime)) {
+    throw new RuleError("La hora debe ser en bloques de 30 minutos (HH:MM).");
+  }
+  if (!(DURATIONS as readonly number[]).includes(input.durationMin)) {
+    throw new RuleError("La duración debe ser 60, 90 o 120 minutos.");
+  }
   const court = await ctx.db.collection<Court>("courts").findOne({ _id: input.courtId });
   if (!court) throw new NotFoundError("Cancha no encontrada");
   if (!court.active) throw new RuleError("La cancha está en mantenimiento.");
@@ -81,12 +89,13 @@ export async function cancelBooking(
 ): Promise<void> {
   const bookings = ctx.db.collection<Booking>("bookings");
   const booking = await bookings.findOne({ _id: bookingId });
-  if (!booking) throw new NotFoundError("Reserva no encontrada");
-  if (actor.role !== "admin") {
-    if (booking.userId !== actor.userId) throw new RuleError("Solo puedes cancelar tus propias reservas.");
-    if (isPast(booking.date, booking.startSlot, ctx.now)) throw new RuleError("La reserva ya empezó y no se puede cancelar.");
+  if (!booking || (actor.role !== "admin" && booking.userId !== actor.userId)) {
+    throw new NotFoundError("Reserva no encontrada");
   }
-  if (booking.status !== "confirmada") throw new RuleError("La reserva no está activa.");
+  if (booking.status !== "confirmada") throw new ConflictError("La reserva no está activa.");
+  if (actor.role !== "admin" && isPast(booking.date, booking.startSlot, ctx.now)) {
+    throw new RuleError("La reserva ya empezó y no se puede cancelar.");
+  }
 
   const session = ctx.client.startSession();
   try {
@@ -96,7 +105,7 @@ export async function cancelBooking(
         { $set: { status: "cancelada" } },
         { session },
       );
-      if (res.modifiedCount !== 1) throw new RuleError("La reserva no está activa.");
+      if (res.modifiedCount !== 1) throw new ConflictError("La reserva no está activa.");
       await ctx.db.collection("slot_locks").deleteMany({ bookingId }, { session });
     });
   } finally {

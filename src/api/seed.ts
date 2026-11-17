@@ -28,7 +28,11 @@ const COURTS: Court[] = [
 /** Idempotente: no pisa lo existente (precios/horario editados, admin ya creado). */
 export async function seed(db: Db, opts?: { adminEmail?: string; adminPassword?: string }): Promise<void> {
   const adminEmail = opts?.adminEmail ?? "admin@canchas.local";
-  const adminPassword = opts?.adminPassword ?? process.env.ADMIN_PASSWORD ?? "admin12345";
+  const adminPassword = opts?.adminPassword ?? process.env.ADMIN_PASSWORD;
+  if (!adminPassword && process.env.NODE_ENV === "production") {
+    throw new Error("ADMIN_PASSWORD es obligatorio en producción");
+  }
+  const password = adminPassword ?? "admin12345";
 
   for (const s of SPACES) {
     await db.collection<{ _id: string }>("spaces").updateOne({ _id: s._id }, { $setOnInsert: s }, { upsert: true });
@@ -43,7 +47,7 @@ export async function seed(db: Db, opts?: { adminEmail?: string; adminPassword?:
       name: "Administrador",
       email: adminEmail,
       phone: "+000000000",
-      passwordHash: await Bun.password.hash(adminPassword),
+      passwordHash: await Bun.password.hash(password),
       role: "admin",
     });
   }
