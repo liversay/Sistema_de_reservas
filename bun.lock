@@ -11,6 +11,14 @@
         "typescript": "^5.6.0",
       },
     },
+    "src/api": {
+      "name": "@canchas/api",
+      "version": "0.1.0",
+      "dependencies": {
+        "@canchas/shared": "workspace:*",
+        "mongodb": "^6.10.0",
+      },
+    },
     "src/shared": {
       "name": "@canchas/shared",
       "version": "0.1.0",
@@ -20,6 +28,8 @@
     },
   },
   "packages": {
+    "@canchas/api": ["@canchas/api@workspace:src/api"],
+
     "@canchas/shared": ["@canchas/shared@workspace:src/shared"],
 
     "@mongodb-js/saslprep": ["@mongodb-js/saslprep@1.6.3", "", { "dependencies": { "sparse-bitfield": "^3.0.3" } }, "sha512-aHGFvT95c82CoQ7hb6qXpz8Hcc5PJb3ZtQ+P01QDBbyQday0mjcrJPeNJOHCgWe0pGX0zKmKP+1mWi/I/BCX9Q=="],
