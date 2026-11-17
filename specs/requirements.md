@@ -21,6 +21,8 @@ Roles: **cliente** (con cuenta) y **administrador** (rol sembrado). Cada RF se v
 | RF-12 | El admin marca una reserva jugada como "no se presentó". | RN-11 | CA-13 |
 | RF-13 | El admin administra canchas, horarios semanales y precios por duración (crear, editar). | RN-04, RN-10 | CA-14 |
 | RF-14 | El admin activa o desactiva una cancha (mantenimiento); una cancha con reservas no se borra. | RN-08, RN-10 | CA-14 |
+| RF-15 | **CR-01** El cliente (o el admin para un invitado) crea una **serie semanal**: la misma cancha, hora y duración repetidas cada 7 días, de 2 a 8 ocurrencias contando la primera. Cada ocurrencia es una reserva propia con un `seriesId` compartido. | RN-01..RN-05, RN-08, RN-09, RN-12, RN-13 | CA-15, CA-16, CA-18 |
+| RF-16 | **CR-01** El dueño de la serie (cliente) o el admin cancela "las próximas": solo las ocurrencias que aún no empezaron; las ya jugadas o en curso no cambian. | RN-06, RN-13 | CA-17 |
 
 ## Requisitos no funcionales
 

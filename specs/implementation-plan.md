@@ -23,9 +23,9 @@ Estado: ✔ implementado y verificado localmente (48 pruebas en verde). **Los PR
 | 3 | aaronbatistaa (Dev) | `feat/3-reservas-core` | [#3](https://github.com/liversay/Sistema_de_reservas/issues/3) | Base de datos, disponibilidad, creación de reservas, slot_locks |
 | 4 | Diegoalevq (QA) | `test/4-doble-reserva-ci` | [#4](https://github.com/liversay/Sistema_de_reservas/issues/4) | Suite de doble reserva (CA-05, CA-06) y CI |
 
-## Ciclo 2 (en curso)
+## Ciclo 2 (completado ✔)
 
-Estado: tarea 5 (esta) en curso; tareas 6 a 9 pendientes. La tarea 5 fija los contratos de `specs/api.md` y las pruebas previstas por CA en `specs/acceptance-criteria.md` antes de que Dev implemente.
+Estado: ✔ tareas 5 a 9 implementadas y verificadas localmente (73 pruebas `bun test` y 16 e2e en verde). La tarea 5 fijó los contratos de `specs/api.md` y las pruebas previstas por CA en `specs/acceptance-criteria.md` antes de que Dev implementara.
 
 | Tarea | Responsable (rol) | Rama | Issue | Alcance |
 |---|---|---|---|---|
@@ -35,18 +35,26 @@ Estado: tarea 5 (esta) en curso; tareas 6 a 9 pendientes. La tarea 5 fija los co
 | 8 | Diegoalevq (Dev) | `feat/8-backoffice` | [#8](https://github.com/liversay/Sistema_de_reservas/issues/8) | Web backoffice |
 | 9 | liversay (QA) | `test/9-e2e` | [#9](https://github.com/liversay/Sistema_de_reservas/issues/9) | Pruebas de aceptación e2e (Playwright) |
 
-## Ciclo 3 (cambio de requerimiento)
+## Ciclo 3 (cambio de requerimiento, en curso)
 
-Las issues del ciclo 3 se crean al iniciarlo (su número se registra aquí entonces).
+Estado: la tarea 10 (esta) actualiza las specs con el cambio **CR-01**; las tareas 11 y 12 quedan pendientes. Las issues del ciclo 3 llevan la etiqueta `ciclo-3`; su numeración se desplazó porque el PR #10 ocupó el número 10.
 
-| Tarea | Responsable (rol) | Rama | Alcance |
-|---|---|---|---|
-| 10 | Diegoalevq (Spec) | `docs/10-cr-01-recurrentes` | CR-01 en las specs: requisitos, reglas (conflicto todo-o-nada), CA, plan |
-| 11 | liversay (Dev) | `feat/11-series` | Implementar reservas recurrentes semanales |
-| 12 | aaronbatistaa (QA) | `test/12-series-cierre` | Pruebas de la serie, evidencia en `docs/testing.md` y cierre |
+| Tarea | Responsable (rol) | Rama | Issue | Alcance |
+|---|---|---|---|---|
+| 10 | Diegoalevq (Spec) | `docs/11-cr-01-recurrentes` | [#11](https://github.com/liversay/Sistema_de_reservas/issues/11) | CR-01 en las specs: RF-15/16, RN-12/13, CA-15…18, api, modelo, plan, ADR-005 |
+| 11 | liversay (Dev) | `feat/12-series` | [#12](https://github.com/liversay/Sistema_de_reservas/issues/12) | Implementar reservas recurrentes semanales (API, `seriesId`, índice, web) |
+| 12 | aaronbatistaa (QA) | `test/13-series-cierre` | [#13](https://github.com/liversay/Sistema_de_reservas/issues/13) | Pruebas de la serie, evidencia en `docs/testing.md` y cierre |
 
-CR-01: "Un equipo quiere reservar la misma cancha todos los jueves a las 20:00 durante N semanas."
-Los ciclos 1–2 no dejan nada preparado para series (sin `seriesId`), para que el cambio sea real.
+### Flujo del cambio CR-01
+
+1. **Cambio solicitado** (2026-11-17): "Un equipo quiere reservar la misma cancha todos los jueves a las 20:00 durante varias semanas." → issue #11.
+2. **Actualizar la spec:** RF-15/RF-16 en `requirements.md`, RN-12/RN-13 en `business-rules.md`.
+3. **Actualizar los criterios de aceptación:** CA-15…CA-18 y su prueba prevista.
+4. **Actualizar contratos y plan:** `api.md`, `data-model.md` (`bookings.seriesId?`, índice), este plan, ADR-005 y CHANGELOG.
+5. *(después)* **Código** (#12) → **pruebas** (#13) → **resultados** en `docs/testing.md`.
+
+Los ciclos 1–2 no dejaron nada preparado para series (sin `seriesId`), para que el cambio sea real.
+Los cambios de este ciclo están marcados con `CR-01` en cada documento.
 
 ## Trazabilidad
 
@@ -56,3 +64,4 @@ RF → RN → CA → prueba. La tabla CA → prueba vive en `docs/testing.md`.
 |---|---|
 | 1 ✔ | CA-01, CA-03 (cálculo), CA-04, CA-05, CA-06 a nivel de dominio y base de datos |
 | 2 | CA-01…CA-14 en API y e2e |
+| 3 *(CR-01)* | CA-15…CA-18 (pendientes de implementación y pruebas: #12, #13) |
