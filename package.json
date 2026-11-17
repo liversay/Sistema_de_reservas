@@ -1,0 +1,17 @@
+{
+  "name": "sistema-reservas",
+  "private": true,
+  "workspaces": ["src/*"],
+  "scripts": {
+    "db:start": "bun scripts/db-start.ts",
+    "db:stop": "bun scripts/db-stop.ts",
+    "test:unit": "bun test tests/unit",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@canchas/shared": "workspace:*",
+    "@types/bun": "latest",
+    "mongodb": "^6.10.0",
+    "typescript": "^5.6.0"
+  }
+}
