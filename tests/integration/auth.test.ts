@@ -68,6 +68,17 @@ describe("auth", () => {
     expect((await t.call("GET", "/api/auth/me", { cookie: r.cookie })).status).toBe(401);
   });
 
+  test("sesión emitida hace más de 7 días -> 401; dentro de 7 días -> 200", async () => {
+    const r = await t.register("vieja@x.com");
+    expect((await t.call("GET", "/api/auth/me", { cookie: r.cookie })).status).toBe(200);
+    const original = t.clock.now;
+    t.clock.now = new Date(original.getTime() + 6 * 24 * 3600 * 1000);
+    expect((await t.call("GET", "/api/auth/me", { cookie: r.cookie })).status).toBe(200);
+    t.clock.now = new Date(original.getTime() + 8 * 24 * 3600 * 1000);
+    expect((await t.call("GET", "/api/auth/me", { cookie: r.cookie })).status).toBe(401);
+    t.clock.now = original;
+  });
+
   test("/api/bookings sin sesión 401; cliente en /api/admin 403; sin sesión en admin 401", async () => {
     expect((await t.call("POST", "/api/bookings", { body: {} })).status).toBe(401);
     expect((await t.call("GET", "/api/bookings/mine")).status).toBe(401);

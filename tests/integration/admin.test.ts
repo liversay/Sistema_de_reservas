@@ -68,6 +68,20 @@ describe("admin reservas", () => {
     NOON_PAST();
   });
 
+  test("reserva pagada no puede pasar a no-show (409) y el cliente no ve paidBy", async () => {
+    const b = (await t.call("POST", "/api/bookings", { cookie: client, body: { courtId: "completa", date: "2026-11-19", startTime: "16:00", durationMin: 60 } })).json;
+    t.clock.now = new Date(2026, 10, 19, 17, 30);
+    const pay = await t.call("POST", `/api/admin/bookings/${b.id}/payment`, { cookie: admin, body: { amount: 90, method: "efectivo" } });
+    expect(pay.status).toBe(200);
+    expect(pay.json.payment.paidBy).toBeTruthy();
+    expect((await t.call("POST", `/api/admin/bookings/${b.id}/no-show`, { cookie: admin })).status).toBe(409);
+    const mine = await t.call("GET", "/api/bookings/mine", { cookie: client });
+    const row = mine.json.find((x: any) => x.id === b.id);
+    expect(row.payment.status).toBe("pagado");
+    expect(row.payment.paidBy).toBeUndefined();
+    NOON_PAST();
+  });
+
   test("no-show: 422 antes, 200 después, luego pagar 409; cancelada no terminada -> 409", async () => {
     const b = (await t.call("POST", "/api/admin/bookings", { cookie: admin, body: guestBody("19:00") })).json;
     const ns = (id: string) => t.call("POST", `/api/admin/bookings/${id}/no-show`, { cookie: admin });

@@ -45,10 +45,11 @@ export async function registerPayment(
 export async function markNoShow(ctx: Ctx, id: string): Promise<Booking> {
   const b = await findBooking(ctx.db, id);
   if (b.status !== "confirmada") throw new ConflictError("La reserva no está confirmada.");
+  if (b.payment.status === "pagado") throw new ConflictError("La reserva ya fue pagada.");
   if (!hasEnded(b.date, b.startSlot, b.durationMin, ctx.now)) throw new RuleError("El turno aún no terminó.");
   const res = await ctx.db
     .collection<Booking>("bookings")
-    .findOneAndUpdate({ _id: id, status: "confirmada" }, { $set: { status: "no_show" } }, { returnDocument: "after" });
+    .findOneAndUpdate({ _id: id, status: "confirmada", "payment.status": "pendiente" }, { $set: { status: "no_show" } }, { returnDocument: "after" });
   if (!res) throw new ConflictError("La reserva no está confirmada.");
   return res;
 }
@@ -76,6 +77,7 @@ export async function listPayments(db: Db, status: "pending" | "paid", now: Date
 const hhmm = (s: string) => s;
 export const CourtBody = CourtInput.extend({
   id: z.string().regex(/^[a-z0-9-]+$/, "Solo minúsculas, números y guiones").optional(),
+  spaceIds: z.array(z.string().min(1)).min(1),
   prices: z.object({
     "60": z.number().positive(),
     "90": z.number().positive(),

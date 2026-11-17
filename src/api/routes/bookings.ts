@@ -31,7 +31,7 @@ export function bookingRoutes(deps: { db: Db; client: MongoClient; secret: strin
     const user = c.get("user");
     const now = c.get("now");
     const id = c.req.param("id");
-    await cancelBooking(ctx(now), id, { userId: user._id, role: user.role });
+    await cancelBooking(ctx(now), id, { userId: user._id, role: "client" });
     const b = (await deps.db.collection<Booking>("bookings").findOne({ _id: id }))!;
     return c.json((await bookingResources(deps.db, [b], now, { admin: false }))[0]);
   });

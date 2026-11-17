@@ -35,7 +35,7 @@ export function publicRoutes(deps: { db: Db; secret: string }) {
       if (e instanceof MongoServerError && e.code === 11000) throw new ConflictError("Ese email ya está registrado.");
       throw e;
     }
-    await startSession(c, deps.secret, user._id);
+    await startSession(c, deps.secret, user._id, c.get("now"));
     return c.json(publicUser(user), 201);
   });
 
@@ -44,7 +44,7 @@ export function publicRoutes(deps: { db: Db; secret: string }) {
     const user = await users().findOne({ email: input.email.toLowerCase() });
     const ok = user ? await Bun.password.verify(input.password, user.passwordHash) : false;
     if (!user || !ok) throw new HttpError(401, "Credenciales inválidas.");
-    await startSession(c, deps.secret, user._id);
+    await startSession(c, deps.secret, user._id, c.get("now"));
     return c.json(publicUser(user));
   });
 

@@ -22,8 +22,17 @@ export function publicUser(u: User) {
   return { id: u._id, name: u.name, email: u.email, phone: u.phone, role: u.role };
 }
 
-export async function startSession(c: Context, secret: string, userId: string) {
-  await setSignedCookie(c, SESSION_COOKIE, userId, secret, { httpOnly: true, sameSite: "Lax", path: "/" });
+export const SESSION_MAX_AGE_S = 7 * 24 * 60 * 60;
+
+/** Valor de la cookie: "userId.issuedAtMs". */
+export async function startSession(c: Context, secret: string, userId: string, now: Date) {
+  await setSignedCookie(c, SESSION_COOKIE, `${userId}.${now.getTime()}`, secret, {
+    httpOnly: true,
+    sameSite: "Lax",
+    path: "/",
+    maxAge: SESSION_MAX_AGE_S,
+    secure: process.env.NODE_ENV === "production",
+  });
 }
 
 export function endSession(c: Context) {
@@ -34,7 +43,10 @@ export function endSession(c: Context) {
 export function requireUser(db: Db, secret: string): MiddlewareHandler<AppEnv> {
   return async (c, next) => {
     const sid = await getSignedCookie(c, secret, SESSION_COOKIE);
-    const user = sid ? await db.collection<User>("users").findOne({ _id: sid }) : null;
+    const i = sid ? sid.lastIndexOf(".") : -1;
+    const issuedAt = i > 0 ? Number((sid as string).slice(i + 1)) : NaN;
+    const fresh = Number.isFinite(issuedAt) && c.get("now").getTime() - issuedAt <= SESSION_MAX_AGE_S * 1000;
+    const user = sid && fresh ? await db.collection<User>("users").findOne({ _id: (sid as string).slice(0, i) }) : null;
     if (!user) throw new HttpError(401, "Inicia sesión para continuar.");
     c.set("user", user);
     await next();
