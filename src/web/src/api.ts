@@ -34,6 +34,38 @@ export interface Booking {
   createdAt: string;
 }
 
+export type PaymentMethod = "efectivo" | "transferencia" | "tarjeta";
+
+export interface ScheduleDay {
+  weekday: number; // 0 = lunes … 6 = domingo
+  open: string;
+  close: string;
+  closed: boolean;
+}
+
+/** Cancha tal como la devuelve /api/admin/courts (incluye inactivas). */
+export interface AdminCourt {
+  id: string;
+  name: string;
+  sport: Sport;
+  format?: "5vs5" | "7vs7";
+  spaceIds: string[];
+  active: boolean;
+  prices: Prices;
+  schedule: ScheduleDay[];
+}
+
+export type CourtInput = Omit<AdminCourt, "id"> & { id?: string };
+
+/** Reserva en respuestas de admin: con cliente o invitado y `played`. */
+export interface AdminBooking extends Omit<Booking, "payment"> {
+  payment: { status: "pendiente" | "pagado"; amount?: number; method?: PaymentMethod; paidAt?: string; paidBy?: string };
+  createdBy: "client" | "admin";
+  user?: { name: string; phone: string };
+  guest?: { name: string; phone: string };
+  played: boolean;
+}
+
 /** Error de la API con el cuerpo `{ error, fields? }` de specs/api.md. */
 export class ApiError extends Error {
   constructor(
@@ -84,4 +116,25 @@ export const api = {
     request<Booking>("/bookings", { method: "POST", body: input }),
   myBookings: () => request<Booking[]>("/bookings/mine"),
   cancel: (id: string) => request<Booking>(`/bookings/${encodeURIComponent(id)}/cancel`, { method: "POST" }),
+  admin: {
+    bookings: (date: string, signal?: AbortSignal) =>
+      request<AdminBooking[]>(`/admin/bookings?date=${encodeURIComponent(date)}`, { signal }),
+    createBooking: (input: {
+      courtId: string;
+      date: string;
+      startTime: string;
+      durationMin: Duration;
+      guest: { name: string; phone: string };
+    }) => request<AdminBooking>("/admin/bookings", { method: "POST", body: input }),
+    pay: (id: string, input: { amount: number; method: PaymentMethod }) =>
+      request<AdminBooking>(`/admin/bookings/${encodeURIComponent(id)}/payment`, { method: "POST", body: input }),
+    noShow: (id: string) => request<AdminBooking>(`/admin/bookings/${encodeURIComponent(id)}/no-show`, { method: "POST" }),
+    cancel: (id: string) => request<AdminBooking>(`/admin/bookings/${encodeURIComponent(id)}/cancel`, { method: "POST" }),
+    payments: (status: "pending" | "paid", signal?: AbortSignal) =>
+      request<AdminBooking[]>(`/admin/payments?status=${status}`, { signal }),
+    courts: () => request<AdminCourt[]>("/admin/courts"),
+    createCourt: (input: CourtInput) => request<AdminCourt>("/admin/courts", { method: "POST", body: input }),
+    updateCourt: (id: string, input: CourtInput) =>
+      request<AdminCourt>(`/admin/courts/${encodeURIComponent(id)}`, { method: "PUT", body: input }),
+  },
 };

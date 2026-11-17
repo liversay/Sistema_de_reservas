@@ -1,0 +1,539 @@
+/* Backoffice: mismo lenguaje visual que la web cliente (tokens de styles.css). */
+
+/* ---------- Barra superior del backoffice ---------- */
+.admin-bar .topbar-inner {
+  flex-wrap: wrap;
+}
+.brand-admin {
+  color: var(--ball);
+}
+.admin-bar .topnav {
+  flex-wrap: wrap;
+}
+.admin-bar .navlink.active {
+  background: var(--ball);
+  color: var(--green);
+  font-weight: 700;
+}
+.admin-bar .navlink:focus-visible,
+.topbar .navlink:focus-visible {
+  outline-color: var(--ball);
+}
+
+/* ---------- Controles comunes ---------- */
+.field select {
+  height: 50px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 16px;
+  color: var(--ink);
+}
+.field select:disabled {
+  background: #eef1ec;
+  color: var(--muted);
+}
+.field select:focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 1px;
+  border-color: var(--green);
+}
+.field.has-error select {
+  border-color: var(--danger);
+}
+.btn-accent {
+  background: var(--ball);
+  color: var(--green);
+  font-weight: 800;
+}
+.btn-accent:hover:not(:disabled) {
+  background: var(--ball-deep);
+}
+.btn-accent:disabled {
+  background: #e3d9ae;
+  color: #5b5326;
+}
+.btn-small.btn-primary,
+.btn-small.btn-secondary,
+.btn-small.btn-danger {
+  white-space: normal;
+}
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.seg-wide {
+  display: flex;
+  flex-wrap: wrap;
+}
+.seg-wide .seg {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0 10px;
+}
+.badge-pending {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 13px;
+  font-size: 12px;
+  font-weight: 700;
+  background: #fff4d1;
+  color: #7a4b00;
+}
+.nowrap {
+  white-space: nowrap;
+}
+.right {
+  text-align: right;
+}
+.total {
+  color: var(--green);
+  font-family: var(--display);
+  font-size: 18px;
+}
+
+/* ---------- Barra de herramientas y navegación por día ---------- */
+.admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+}
+.toolbar-note {
+  margin: 0;
+}
+.daynav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.daynav-pick input {
+  height: 44px;
+  border-radius: 22px;
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 0 14px;
+  font: inherit;
+  color: var(--ink);
+}
+.daynav-label {
+  font-weight: 700;
+  color: var(--green);
+  margin-left: 4px;
+}
+.board > .daynav {
+  margin-bottom: 14px;
+}
+
+/* ---------- Distribución con panel lateral ---------- */
+.admin-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+  margin-top: 16px;
+}
+.admin-split.has-aside {
+  grid-template-columns: minmax(0, 1fr) 340px;
+}
+.admin-panel {
+  position: sticky;
+  top: 16px;
+  padding: 22px;
+}
+.admin-panel-sub {
+  margin: 6px 0 0;
+}
+.admin-total {
+  margin: 0;
+}
+.pay-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  margin-top: 16px;
+}
+@media (min-width: 1100px) {
+  .pay-columns {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    align-items: start;
+  }
+}
+
+/* ---------- Tablas ---------- */
+.table-scroll {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid var(--line-soft);
+  scrollbar-width: thin;
+}
+.data-table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.data-table th,
+.data-table td {
+  padding: 12px 12px;
+  text-align: left;
+  vertical-align: middle;
+  border-top: 1px solid var(--line-soft);
+}
+.data-table thead th {
+  border-top: 0;
+  background: #f7f9f6;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.data-table th.right,
+.data-table td.right {
+  text-align: right;
+}
+.data-table tfoot th,
+.data-table tfoot td {
+  background: #f7f9f6;
+}
+.data-table tr.is-active td {
+  background: var(--green-soft);
+}
+.cell-name {
+  font-weight: 700;
+}
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.data-table .confirm-row {
+  min-width: 220px;
+}
+.table-scroll:focus-visible,
+.schedule-scroll:focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 2px;
+}
+
+/* ---------- Por cobrar ---------- */
+.due-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.due {
+  border: 1px solid var(--line-soft);
+  border-radius: 16px;
+  padding: 12px 14px;
+}
+.due-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+}
+.due-main {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+.due .admin-panel {
+  position: static;
+  margin-top: 12px;
+  box-shadow: none;
+  border: 1px solid var(--line-soft);
+  background: #f7f9f6;
+}
+
+/* ---------- Canchas ---------- */
+.tiles {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px;
+}
+.tile {
+  background: var(--card);
+  border-radius: 16px;
+  border: 2px solid var(--line-soft);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  transition: transform 160ms ease-out;
+}
+.tile:hover {
+  transform: translateY(-2px);
+}
+.tile.is-on {
+  border-color: var(--green);
+}
+.tile.is-off .court-icon {
+  filter: grayscale(0.85);
+  opacity: 0.7;
+}
+.tile-main {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  text-align: left;
+  padding: 12px 12px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  border-radius: 14px 14px 0 0;
+  min-height: 44px;
+}
+.tile-main .court-icon {
+  width: 100%;
+  height: 64px;
+}
+.tile-name {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1.2;
+}
+.tile-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 12px 12px;
+}
+.tile-state {
+  font-size: 13px;
+  font-weight: 700;
+}
+.tile-state.ok {
+  color: #0f5a33;
+}
+.tile-state.off {
+  color: #8a3c00;
+}
+
+/* Interruptor (abierto / activa) */
+.switch {
+  position: relative;
+  flex: 0 0 auto;
+  width: 52px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 22px;
+}
+.switch::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 7px;
+  width: 52px;
+  height: 30px;
+  border-radius: 15px;
+  background: #7b8b80;
+  transition: background 160ms ease-out;
+}
+.switch[aria-checked="true"]::before {
+  background: var(--green);
+}
+.switch-knob {
+  position: absolute;
+  top: 10px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: left 160ms ease-out;
+}
+.switch[aria-checked="true"] .switch-knob {
+  left: 25px;
+}
+.switch:disabled {
+  opacity: 0.6;
+}
+
+/* Editor de cancha */
+.editor {
+  margin-top: 24px;
+  padding: 24px;
+}
+.editor-sub {
+  margin: 4px 0 0;
+}
+.editor .board-head {
+  align-items: flex-start;
+}
+.editor-grid {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 24px 32px;
+  margin-top: 16px;
+}
+.price-editor {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.price-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+.price-editor .field input {
+  width: 100%;
+}
+.add-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+.add-wide {
+  grid-column: 1 / -1;
+}
+.editor > .form-actions {
+  margin-top: 20px;
+}
+
+/* Horario semanal */
+.schedule-scroll {
+  overflow-x: auto;
+  margin-top: 8px;
+}
+.schedule {
+  width: 100%;
+  min-width: 420px;
+  border-collapse: collapse;
+}
+.schedule th,
+.schedule td {
+  padding: 4px 10px 4px 0;
+  text-align: left;
+  border-top: 1px solid var(--line-soft);
+  vertical-align: middle;
+}
+.schedule thead th {
+  border-top: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.schedule tbody th {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.time-select {
+  height: 44px;
+  min-width: 96px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 0 10px;
+  font: inherit;
+  color: var(--ink);
+}
+.time-select:focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 1px;
+}
+.time-select[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+@media (max-width: 960px) {
+  .admin-split.has-aside {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .admin-panel {
+    position: static;
+  }
+  .editor-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .price-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-bar .navlink {
+    width: auto;
+    padding: 0 12px;
+    justify-content: flex-start;
+  }
+  .admin-bar .navlink span {
+    position: static;
+    width: auto;
+    height: auto;
+    clip: auto;
+  }
+  .add-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .editor {
+    padding: 16px 14px;
+  }
+  .daynav-label {
+    flex: 1 1 100%;
+    margin-left: 0;
+  }
+  .admin-toolbar > .btn {
+    width: 100%;
+  }
+  .form-actions .btn {
+    flex: 1 1 0;
+  }
+  .editor .board-head > .btn {
+    width: 100%;
+  }
+  .tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .tile-main .court-icon {
+    display: block;
+  }
+}
+
+.price-editor legend {
+  padding: 0;
+}
+
+.data-table.data-table-compact {
+  min-width: 440px;
+}
+
+@media (max-width: 640px) {
+  .schedule {
+    min-width: 0;
+  }
+  .schedule th,
+  .schedule td {
+    padding-right: 6px;
+  }
+  .time-select {
+    min-width: 0;
+    width: 84px;
+    padding: 0 4px;
+    font-size: 15px;
+  }
+}
