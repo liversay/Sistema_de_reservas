@@ -537,3 +537,80 @@
     font-size: 15px;
   }
 }
+
+/* Móvil: cada reserva es una tarjeta con sus acciones a la vista (sin scroll horizontal). */
+@media (max-width: 600px) {
+  .table-scroll:has(.data-table-stack) {
+    overflow: visible;
+    border: 0;
+  }
+  .data-table-stack,
+  .data-table-stack tbody,
+  .data-table-stack tr,
+  .data-table-stack td {
+    display: block;
+    min-width: 0;
+    width: 100%;
+  }
+  .data-table-stack thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .data-table-stack tr {
+    border: 1px solid var(--line-soft);
+    border-radius: 14px;
+    padding: 6px 12px 12px;
+    margin-bottom: 10px;
+    background: #fff;
+  }
+  .data-table-stack td {
+    border: 0;
+    padding: 6px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    text-align: right;
+  }
+  .data-table-stack td[data-label]::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding-top: 2px;
+  }
+  .data-table-stack tr.is-active td {
+    background: transparent;
+  }
+  .data-table-stack tr.is-active {
+    background: var(--green-soft);
+  }
+  .data-table-stack td.cell-actions {
+    display: block;
+    text-align: left;
+    padding-top: 10px;
+    border-top: 1px solid var(--line-soft);
+    margin-top: 6px;
+  }
+  .data-table-stack td.cell-actions:empty {
+    display: none;
+  }
+  .data-table-stack .row-actions .btn {
+    flex: 1 1 auto;
+  }
+  .data-table .confirm-row {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .data-table-stack td.cell-actions:has(.row-actions:empty) {
+    display: none;
+  }
+}

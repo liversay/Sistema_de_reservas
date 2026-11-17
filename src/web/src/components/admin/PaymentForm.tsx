@@ -40,8 +40,8 @@ export function PaymentForm({
     e.preventDefault();
     setError(null);
     const value = Number(amount.replace(",", "."));
-    if (!amount.trim() || !Number.isFinite(value) || value <= 0) {
-      setAmountError("El monto debe ser mayor que 0.");
+    if (!/^\d+([.,]\d{1,2})?$/.test(amount.trim()) || !Number.isFinite(value) || value <= 0) {
+      setAmountError("Escribe un monto mayor que 0, con hasta 2 decimales.");
       return;
     }
     setAmountError(null);

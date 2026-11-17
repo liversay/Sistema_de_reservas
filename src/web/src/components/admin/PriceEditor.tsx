@@ -13,7 +13,7 @@ export function parsePrices(d: PriceDraft): { prices?: Prices; errors: Partial<R
   const out = {} as Prices;
   for (const k of ["60", "90", "120"] as const) {
     const n = Number(d[k].replace(",", "."));
-    if (!d[k].trim() || !Number.isFinite(n) || n <= 0) errors[k] = "Mayor que 0";
+    if (!/^\d+([.,]\d{1,2})?$/.test(d[k].trim()) || !Number.isFinite(n) || n <= 0) errors[k] = "Número mayor que 0";
     else out[k] = n;
   }
   return Object.keys(errors).length ? { errors } : { prices: out, errors };

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api, ApiError, type AdminBooking } from "../../api";
 import { AlertIcon, CheckIcon } from "../../components/Icons";
 import { DayNav } from "../../components/admin/DayNav";
@@ -16,19 +16,28 @@ export function Payments() {
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ kind: "ok" | "error"; message: string } | null>(null);
 
+  const latest = useRef<AbortController | null>(null);
   const load = useCallback(async () => {
+    latest.current?.abort();
+    const ctrl = new AbortController();
+    latest.current = ctrl;
     try {
-      const [pending, paid] = await Promise.all([api.admin.payments("pending"), api.admin.payments("paid")]);
+      const [pending, paid] = await Promise.all([
+        api.admin.payments("pending", ctrl.signal),
+        api.admin.payments("paid", ctrl.signal),
+      ]);
+      if (latest.current !== ctrl) return;
       setLists({ pending, paid });
       setError(null);
     } catch (e) {
-      const message = e instanceof ApiError ? e.message : "No pudimos cargar los pagos.";
-      setError(message);
+      if (ctrl.signal.aborted || latest.current !== ctrl) return;
+      setError(e instanceof ApiError ? e.message : "No pudimos cargar los pagos.");
     }
   }, []);
 
   useEffect(() => {
     void load();
+    return () => latest.current?.abort();
   }, [load]);
 
   const pending = useMemo(
@@ -37,7 +46,7 @@ export function Payments() {
   );
   const pendingTotal = pending.reduce((s, b) => s + b.price, 0);
   const paidDay = useMemo(
-    () => (lists?.paid ?? []).filter((b) => b.date === day).sort((a, b) => a.startTime.localeCompare(b.startTime)),
+    () => (lists?.paid ?? []).filter((b) => b.date === day && b.status === "confirmada").sort((a, b) => a.startTime.localeCompare(b.startTime)),
     [lists, day],
   );
   const paidTotal = paidDay.reduce((s, b) => s + (b.payment.amount ?? 0), 0);

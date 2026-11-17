@@ -46,30 +46,34 @@ export function DayBookings() {
   const [asking, setAsking] = useState<Asking>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ kind: "ok" | "error"; message: string } | null>(null);
-  const latest = useRef(0);
+  // Solo la última petición, y solo para el día que se está viendo, puede escribir en la lista.
+  const dateRef = useRef(date);
+  dateRef.current = date;
+  const latest = useRef<{ ctrl: AbortController } | null>(null);
 
-  const refresh = useCallback(
-    async (background = false) => {
-      const id = ++latest.current;
-      if (!background) setLoad({ status: "loading" });
-      try {
-        const bookings = await api.admin.bookings(date);
-        if (id === latest.current) setLoad({ status: "ok", bookings });
-      } catch (e) {
-        if (id !== latest.current) return;
-        const message = e instanceof ApiError ? e.message : "No pudimos cargar las reservas.";
-        if (background) setNotice({ kind: "error", message });
-        else setLoad({ status: "error", message });
-      }
-    },
-    [date],
-  );
+  const refresh = useCallback(async (background = false) => {
+    latest.current?.ctrl.abort();
+    const req = { ctrl: new AbortController() };
+    latest.current = req;
+    const day = dateRef.current;
+    if (!background) setLoad({ status: "loading" });
+    try {
+      const bookings = await api.admin.bookings(day, req.ctrl.signal);
+      if (latest.current === req && dateRef.current === day) setLoad({ status: "ok", bookings });
+    } catch (e) {
+      if (latest.current !== req || req.ctrl.signal.aborted || dateRef.current !== day) return;
+      const message = e instanceof ApiError ? e.message : "No pudimos cargar las reservas.";
+      if (background) setNotice({ kind: "error", message });
+      else setLoad({ status: "error", message });
+    }
+  }, []);
 
   useEffect(() => {
     setAside(null);
     setAsking(null);
     void refresh();
-  }, [refresh]);
+    return () => latest.current?.ctrl.abort();
+  }, [date, refresh]);
 
   async function openNew() {
     setNotice(null);
@@ -161,7 +165,7 @@ export function DayBookings() {
             )}
             {load.status === "ok" && bookings.length > 0 && (
               <div className="table-scroll" role="region" aria-label="Tabla de reservas del día" tabIndex={0}>
-                <table className="data-table">
+                <table className="data-table data-table-stack">
                   <thead>
                     <tr>
                       <th scope="col">Hora</th>
@@ -181,29 +185,29 @@ export function DayBookings() {
                       const isAsking = asking?.id === b.id;
                       return (
                         <tr key={b.id} className={aside?.kind === "pay" && aside.id === b.id ? "is-active" : undefined}>
-                          <td className="num nowrap">
+                          <td className="num nowrap" data-label="Hora">
                             <strong>{b.startTime}</strong>
                             <span className="muted small"> – {b.endTime}</span>
                             <div className="muted small">{durationLabel(b.durationMin)}</div>
                           </td>
-                          <td>{b.courtName}</td>
-                          <td>
+                          <td data-label="Cancha">{b.courtName}</td>
+                          <td data-label="Cliente">
                             <div className="cell-name">{c.name}</div>
                             <div className="muted small num nowrap">
                               {c.phone}
                               {c.guest && " · Invitado"}
                             </div>
                           </td>
-                          <td>
+                          <td data-label="Estado">
                             <span className={`badge ${st.cls}`}>{st.label}</span>
                           </td>
-                          <td>
+                          <td data-label="Pago">
                             <PayCell b={b} />
                           </td>
-                          <td>
+                          <td className="cell-actions">
                             {isAsking ? (
                               <div className="confirm-row" role="group" aria-label="Confirmar acción">
-                                <span>{asking.action === "cancel" ? "¿Cancelar esta reserva?" : "¿Marcar como no se presentó?"}</span>
+                                <span>{asking.action === "cancel" ? (b.payment.status === "pagado" ? `Esta reserva ya está pagada (${money(b.payment.amount ?? b.price)}). ¿Cancelar igualmente?` : "¿Cancelar esta reserva?") : "¿Marcar como no se presentó?"}</span>
                                 <button
                                   type="button"
                                   className="btn btn-danger btn-small"
@@ -239,7 +243,7 @@ export function DayBookings() {
                                     </button>
                                   </>
                                 )}
-                                {confirmed && pending && (
+                                {confirmed && (
                                   <button
                                     type="button"
                                     className="btn btn-secondary btn-small"
