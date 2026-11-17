@@ -2,11 +2,18 @@
 
 ## [Sin publicar]
 
-## [Ciclo 4]
+## [Ciclo 4] — completado
 
 ### Cambio solicitado
 
 - **CR-02 Reserva sin cuenta, fidelidad, horizonte y tablero (specs):** RF-17…RF-22, RN-14 (horizonte de 30 días), RN-15 (reserva sin cuenta con `guest`), RN-16 (club de socios con % configurable) y RN-05 también en la interfaz, CA-19…CA-25, sesión opcional y endpoints `settings/loyalty`, `bookings/calendar` y `payments/summary` en `api.md`, `settings`, `basePrice`, `discountPct` y método `yappy` en `data-model.md`, ciclo 4 y flujo CR-02 en `implementation-plan.md` y ADR-006. Modifica RF-04, RN-07, RN-09, CA-09 y CA-15 (marcado en cada uno) (#28).
+
+### Implementación y pruebas
+
+- **CR-02 API:** reserva sin cuenta (`guest`), descuento de socios con `settings/loyalty`, horizonte de 30 días, método `yappy`, `bookings/calendar` y `payments/summary` (#29, PR #34).
+- **CR-02 web cliente:** reserva sin cuenta, «Socio −N %», tira de 31 días, horas en 12 h, bloques pasados no elegibles y «Club de socios» (#30, PR #35).
+- **CR-02 backoffice:** tablero `/admin` con pestañas Reservas | Pagos, tarjeta de detalle, indicadores, desglose por método y % de socios (#31, PR #36).
+- **CR-02 pruebas y evidencia:** `tests/e2e/cr02.e2e.ts` (CA-19…CA-25), e2e de CA-01…CA-18 adaptados, sección «Evidencia CR-02» en `docs/testing.md`, README y correcciones de spec (horizonte en `POST /api/admin/bookings`, CA-10/CA-11 como tablero). 128 `bun test` y 27 e2e en verde, dos corridas seguidas (#32).
 
 ## [Ciclo 3]
 
