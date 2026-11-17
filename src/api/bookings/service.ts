@@ -174,18 +174,24 @@ export async function cancelFutureInSeries(
   if (rows.length === 0 || (actor.role !== "admin" && !rows.every((b) => b.userId === actor.userId))) {
     throw new NotFoundError("Serie no encontrada");
   }
-  const ids = rows.filter((b) => b.status === "confirmada" && !isPast(b.date, b.startSlot, ctx.now)).map((b) => b._id);
-  if (ids.length === 0) return 0;
 
   const session = ctx.client.startSession();
   let cancelled = 0;
   try {
     await session.withTransaction(async () => {
+      // Los objetivos se eligen dentro de la transacción (lectura consistente con la escritura):
+      // una reserva marcada no_show o cancelada entretanto no se toca y conserva sus bloques.
+      const ids = (await bookings.find({ seriesId, status: "confirmada" }, { session }).toArray())
+        .filter((b) => !isPast(b.date, b.startSlot, ctx.now))
+        .map((b) => b._id);
+      cancelled = 0;
+      if (ids.length === 0) return;
       const res = await bookings.updateMany(
         { _id: { $in: ids }, status: "confirmada" },
         { $set: { status: "cancelada" } },
         { session },
       );
+      if (res.modifiedCount !== ids.length) throw new ConflictError("La serie cambió; reintenta.");
       cancelled = res.modifiedCount;
       await ctx.db.collection("slot_locks").deleteMany({ bookingId: { $in: ids } }, { session });
     });

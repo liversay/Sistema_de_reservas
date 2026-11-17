@@ -119,6 +119,7 @@ export function Availability() {
       if (repeat) {
         const { bookings } = await api.bookSeries({ ...base, weeks });
         setNotice({ kind: "series", bookings });
+        setRepeat(false);
       } else {
         setNotice({ kind: "ok", booking: await api.book(base) });
       }

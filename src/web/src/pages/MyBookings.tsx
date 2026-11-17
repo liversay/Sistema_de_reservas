@@ -188,16 +188,17 @@ export function MyBookings() {
                       if (!g.seriesId) return cards[0];
                       const key = `series:${g.seriesId}`;
                       const first = g.items[0]!;
+                      const notStarted = g.items.filter((b) => at(b.date, b.startTime) > now);
                       return (
                         <li key={key} className="series-group" data-testid="serie">
                           <div className="series-head">
                             <div>
                               <div className="series-title">Serie semanal · {first.courtName}</div>
                               <div className="muted small">
-                                {g.items.length} {g.items.length === 1 ? "próxima" : "próximas"} · {first.startTime}–{first.endTime}
+                                {notStarted.length} {notStarted.length === 1 ? "próxima" : "próximas"} · {first.startTime}–{first.endTime}
                               </div>
                             </div>
-                            {asking === key ? (
+                            {notStarted.length === 0 ? null : asking === key ? (
                               <div className="confirm-row">
                                 <span>¿Cancelar las próximas?</span>
                                 <button type="button" className="btn btn-danger" disabled={busy === key} onClick={() => void cancelFuture(g.seriesId!)}>
@@ -208,7 +209,12 @@ export function MyBookings() {
                                 </button>
                               </div>
                             ) : (
-                              <button type="button" className="btn btn-secondary" onClick={() => setAsking(key)}>
+                              <button
+                                type="button"
+                                className="btn btn-secondary"
+                                aria-label={`Cancelar las próximas de la serie ${first.courtName} ${first.startTime}`}
+                                onClick={() => setAsking(key)}
+                              >
                                 Cancelar las próximas
                               </button>
                             )}

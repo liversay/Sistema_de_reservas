@@ -68,6 +68,7 @@ export function NewBookingForm({
       const base = { courtId, date, startTime: start, durationMin: duration, guest: { name: name.trim(), phone: phone.trim() } };
       if (repeat) {
         const { bookings } = await api.admin.createSeries({ ...base, weeks });
+        setRepeat(false);
         onCreated(bookings[0]!, bookings.length);
       } else {
         onCreated(await api.admin.createBooking(base), 1);

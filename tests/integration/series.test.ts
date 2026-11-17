@@ -98,6 +98,7 @@ describe("CR-01 todo-o-nada (CA-16, RN-12)", () => {
     await t.db.collection<any>("courts").updateOne({ _id: "padel-1" }, { $set: { active: false } });
     const inactive = await t.call("POST", "/api/bookings/series", { cookie: ana, body: series({ courtId: "padel-1" }) });
     expect(inactive.status).toBe(422);
+    expect(inactive.json.error).toContain("2026-11-26");
     await t.db.collection<any>("courts").updateOne({ _id: "padel-1" }, { $set: { active: true } });
   });
 
@@ -113,6 +114,37 @@ describe("CR-01 todo-o-nada (CA-16, RN-12)", () => {
   });
 });
 
+describe("CR-01 cancha divisible (CA-16)", () => {
+  test("una reserva suelta de 'completa' en una fecha bloquea la serie de 'media-a' y viceversa", async () => {
+    const one = await t.call("POST", "/api/bookings", { cookie: beto, body: { courtId: "completa", date: "2026-12-03", startTime: "17:00", durationMin: 60 } });
+    expect(one.status).toBe(201);
+    const bookings = await count();
+    const locks = await t.db.collection("slot_locks").countDocuments();
+    const r = await t.call("POST", "/api/bookings/series", { cookie: ana, body: series({ courtId: "media-a", startTime: "17:00" }) });
+    expect(r.status).toBe(409);
+    expect(r.json.error).toBe("Ese horario ya fue tomado el 2026-12-03. Elige otro.");
+    expect(await count()).toBe(bookings);
+    expect(await t.db.collection("slot_locks").countDocuments()).toBe(locks);
+    // a la inversa: serie de 'completa' choca con una media-b suelta
+    await t.call("POST", "/api/bookings", { cookie: beto, body: { courtId: "media-b", date: "2026-12-10", startTime: "22:00", durationMin: 60 } });
+    const inv = await t.call("POST", "/api/bookings/series", { cookie: ana, body: series({ courtId: "completa", startTime: "22:00" }) });
+    expect(inv.status).toBe(409);
+    expect(inv.json.error).toBe("Ese horario ya fue tomado el 2026-12-10. Elige otro.");
+  });
+});
+
+describe("CR-01 fecha pasada", () => {
+  test("la 1.ª ocurrencia ya empezada: 422 con su fecha y nada creado", async () => {
+    const before = await count();
+    t.clock.now = new Date(2026, 10, 19, 17, 0);
+    const r = await t.call("POST", "/api/bookings/series", { cookie: ana, body: series({ courtId: "basquet-1", date: "2026-11-19", startTime: "16:00" }) });
+    t.clock.now = new Date(2026, 10, 19, 10, 0);
+    expect(r.status).toBe(422);
+    expect(r.json.error).toContain("2026-11-19");
+    expect(await count()).toBe(before);
+  });
+});
+
 describe("CR-01 concurrencia", () => {
   test("dos series solapadas a la vez: una gana con 4 reservas, la otra 409 con fecha y 0 reservas", async () => {
     const body = series({ courtId: "padel-1", startTime: "22:00" });
@@ -123,6 +155,7 @@ describe("CR-01 concurrencia", () => {
     expect([a.status, b.status].sort()).toEqual([201, 409]);
     const loser = a.status === 409 ? a : b;
     expect(loser.json.error).toMatch(/^Ese horario ya fue tomado el 2026-1[12]-\d\d\. Elige otro\.$/);
+    expect(loser.json.error).toBe("Ese horario ya fue tomado el 2026-11-26. Elige otro.");
     expect(await count({ courtId: "padel-1", startSlot: 44 })).toBe(4);
   });
 });
